@@ -1,0 +1,141 @@
+.user {
+  flex: 6;
+  padding: 0 20px;
+}
+
+.userTitleContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.userAddButton {
+  width: 80px;
+  border: none;
+  border-radius: 5px;
+  padding: 5px;
+  background-color: teal;
+  cursor: pointer;
+  color: white;
+  font-size: 16px;
+}
+
+.userContainer {
+  display: flex;
+  margin-top: 20px;
+}
+
+.userShow {
+  flex: 1;
+  padding: 20px;
+  -webkit-box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  background-color: rgb(240, 246, 252);
+}
+
+.userUpdate {
+  flex: 4;
+  padding: 20px;
+  -webkit-box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  margin-left: 20px;
+}
+
+.userShowTop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userShowImg {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: white;
+}
+
+.userShowBottom {
+  margin-top: 5px;
+}
+.userShowTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(187, 181, 181);
+}
+
+.userShowInfo {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0px;
+  color: #444;
+}
+
+.userShowIcon {
+  font-size: 16px !important;
+}
+
+.userShowInfoTitle {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.userUpdateTitle {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.userUpdateItem {
+  display: inline-block;
+  margin-left: 50px;
+}
+
+.userUpdateItem > label {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.userUpdateInput {
+  width: 250px;
+  height: 25px;
+  font-weight: 400;
+}
+
+.userUpdateLabel{
+  width: 250px;
+  font-weight: 600;
+}
+
+.userUpdateRight {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.userBanButton {
+  margin-top: 30px;
+  margin-left: 550px;
+  width: 150px;
+  height: 40px;
+  border-radius: 5px;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  background-color: rgb(241, 65, 53);
+  color: white;
+  font-weight: 600;
+}
+
+.userUnbanButton{
+  margin-top: 30px;
+  margin-left: 550px;
+  width: 150px;
+  height: 40px;
+  border-radius: 5px;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  background-color: rgb(114, 61, 236);
+  color: white;
+  font-weight: 600;
+}

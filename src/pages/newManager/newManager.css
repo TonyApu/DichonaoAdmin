@@ -1,0 +1,55 @@
+.newManager {
+  flex: 6;
+}
+
+.newManagerTitleWrapper {
+  padding: 20px;
+}
+
+.newManagerForm {
+  -webkit-box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+}
+
+.newManagerTitleWrapper2 {
+  padding: 20px;
+}
+
+.newManagerTitle {
+  font-size: 26px;
+  font-weight: 600;
+  color: rgb(67, 67, 233);
+}
+.newManagerFormIput {
+  margin-left: 50px;
+}
+
+.newManagerLabel {
+  font-size: 16px;
+  font-weight: 400;
+  margin-right: 20px;
+}
+
+.newManagerFormInput {
+  display: flex;
+  flex-direction: column;
+}
+
+.newManagerFormWrapper {
+  margin-left: 150px;
+}
+
+.newManagerButton {
+  margin-left: 70px;
+  width: 200px;
+  border: none;
+  background-color: darkblue;
+  color: white;
+  padding: 7px 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  height: 40px;
+}
