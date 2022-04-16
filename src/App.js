@@ -108,7 +108,7 @@ function App() {
             }
           ></Route>
           <Route
-            path="/products/newProduct"
+            path="/newProduct"
             element={
               <PrivateRoute>
                 <NewProduct />

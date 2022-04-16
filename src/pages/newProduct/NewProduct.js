@@ -1,5 +1,17 @@
 import "./newProduct.css";
-import { Form, Input, Select, Button, Space, InputNumber, Modal, message } from "antd";
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  Space,
+  InputNumber,
+  Modal,
+  message,
+  notification,
+  Result,
+  Spin,
+} from "antd";
 import { useEffect, useState } from "react";
 import productSystemApi from "../../apis/productSystemApi";
 import productCategoriesApi from "../../apis/productCategoriesApi";
@@ -15,21 +27,58 @@ export default function NewProduct() {
   const [province, setProvince] = useState("");
   const [productCategoryId, setProductCategoryId] = useState(0);
   const [validateMsg, setValidateMsg] = useState("");
+  const [loading, setLoading] = useState("");
+  const [loadErr, setloadErr] = useState(false);
+  const [flag, setFlag] = useState(true);
   const { Option } = Select;
   const { confirm } = Modal;
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setloadErr(false);
+      setLoading(true);
       const params = {
         page: 1,
         size: 10,
       };
-      const response = await productCategoriesApi.getAll(params);
-      setCategories(response.data);
+      await productCategoriesApi
+        .getAll(params)
+        .then((response) => {
+          setCategories(response.data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchCategories();
-  }, []);
+  }, [flag]);
 
   const onChangeUnit = (e) => {
     setUnit(e);
@@ -37,7 +86,7 @@ export default function NewProduct() {
 
   const onChangProvince = (e) => {
     setProvince(e);
-  }
+  };
 
   const onChangeCatagory = (e) => {
     setProductCategoryId(e);
@@ -47,36 +96,62 @@ export default function NewProduct() {
     confirm({
       title: "Bạn có muốn tạo sản phẩm này?",
       icon: <CheckOutlined />,
-      content: "Sản phẩm sau khi tạo có thể được các chủ nông trại thêm vào mùa vụ của mình",
+      content:
+        "Sản phẩm sau khi tạo có thể được các chủ nông trại thêm vào mùa vụ của mình",
       okText: "Tạo",
       okType: "dashed",
       cancelText: "Hủy",
-      async onOk() {
-        const createProdcut = async () => {
+      onOk() {
+        const createProduct = async () => {
           const params = {
             name: productName,
             minPrice: minPrice,
             maxPrice: maxPrice,
             unit: unit,
             productCategoryId: productCategoryId,
-            province: province
-          }
+            province: province,
+          };
+          setLoading(true);
           const result = await productSystemApi.addNew(params).catch((err) => {
-            console.log(err);
-            message.error({
-              duration: 2,
-              content: err.response.data.error.message,
-            });
+            if (err.message === "Network Error") {
+              notification.error({
+                duration: 2,
+                message: "Mất kết nối mạng!",
+                style: { fontSize: 16 },
+              });
+              setloadErr(true);
+            } else if (err.message === "timeout") {
+              notification.error({
+                duration: 2,
+                message: "Server mất thời gian quá lâu để phản hồi!",
+                style: { fontSize: 16 },
+              });
+              setloadErr(true);
+            } else if (err.response.status === 400) {
+              notification.error({
+                duration: 2,
+                message: "Đã có lỗi xảy ra!",
+                style: { fontSize: 16 },
+              });
+            } else {
+              notification.error({
+                duration: 2,
+                message: err.response.data.error.message,
+                style: { fontSize: 16 },
+              });
+            }
           });
           if (result === "Create successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
-              content: "Tạo thành công!",
+              message: "Tạo thành công!",
+              style: { fontSize: 16 },
             });
+            setLoading(false);
+            navigate("/products");
           }
         };
-        await createProdcut();
-        navigate("/products")
+        createProduct();
       },
       onCancel() {},
     });
@@ -122,130 +197,176 @@ export default function NewProduct() {
 
   return (
     <div className="productDetail">
-      <div className="productDetailTitleWrapper">
-        <div className="productDetailForm">
-          <div className="productDetailTitleWrapper2">
-            <h1 className="productDetailTitle">Tạo Sản Phẩm Mới</h1>
-
-            <div className="productDetailFormWrapper">
-              <div className="productDetailFormInput">
-                <span className="productDetailLabel">Tên sản phẩm: </span>
-                <Input
-                  style={{ width: 500 }}
-                  onChange={(e) => {
-                    setProductName(e.target.value);
-                  }}
-                />
-                <span className="productDetailLabel" style={{ color: "red" }}>
-                  {validateMsg.productName}
-                </span>
-              </div>
-              <br />
-
-              <div className="productDetailFormInput">
-                <span className="productDetailLabel">Xuất Sứ: </span>
-                <Select style={{ width: 500 }} onChange={onChangProvince}>
-                  <Option value="Đà Lạt">Đà Lạt</Option>
-                </Select>
-                <span className="productDetailLabel" style={{ color: "red" }}>
-                  {validateMsg.province}
-                </span>
-              </div>
-              <br />
-
-              <div className="productDetailFormInput">
-                <span className="productDetailLabel">Khoảng Giá: </span>
-                <div>
-                  <div style={{ display: "inline-block" }}>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="productDetailTitleWrapper">
+          <div className="productDetailForm">
+            <div className="productDetailTitleWrapper2">
+              <h1 className="productDetailTitle">Tạo Sản Phẩm Mới</h1>
+              {loading ? (
+                <>
+                  <Spin  
+                    style={{ display: "flex", justifyContent: "center" }}
+                    size="large"
+                  />{" "}
+                  <br /> <br />{" "}
+                </>
+              ) : (
+                <div className="productDetailFormWrapper">
+                  <div className="productDetailFormInput">
+                    <span className="productDetailLabel">Tên sản phẩm: </span>
                     <Input
-                      style={{ width: 200 }}
-                      onChange={(e) => setMinPrice(e.target.value)}
+                      style={{ width: 500 }}
+                      onChange={(e) => {
+                        setProductName(e.target.value);
+                      }}
                     />
-                    <br />
                     <span
-                      className="productDetailLabel"
-                      style={{ color: "red", width: 200 }}
+                      className="newProductLabelErr"
+                      
                     >
-                      {validateMsg.minPrice}
+                      {validateMsg.productName}
                     </span>
                   </div>
-                  <div style={{ display: "inline-block" }}>
-                    <span style={{ marginLeft: 20, marginRight: 20 }}> - </span>
-                    <br />
-                    <span
-                      className="productDetailLabel"
-                      style={{ color: "red", width: 200, marginLeft: 20 }}
-                    >
-                      {null}
-                    </span>
-                  </div>
+                  <br />
 
-                  <div style={{ display: "inline-block" }}>
-                    <Input
-                      style={{ width: 200 }}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                    />
-                    <br />
+                  <div className="productDetailFormInput">
+                    <span className="productDetailLabel">Xuất Sứ: </span>
+                    <Select style={{ width: 500 }} onChange={onChangProvince}>
+                      <Option value="Đồng Nai">Đồng Nai</Option>
+                    </Select>
                     <span
-                      className="productDetailLabel"
-                      style={{ color: "red" }}
+                      className="newProductLabelErr"
+                      
                     >
-                      {validateMsg.maxPrice}
+                      {validateMsg.province}
                     </span>
                   </div>
+                  <br />
 
-                  <div style={{ display: "inline-block" }}>
-                    <Input value="VNĐ" style={{ marginLeft: 10, width: 50 }} />
-                    <br />
+                  <div className="productDetailFormInput">
+                    <span className="productDetailLabel">Khoảng Giá: </span>
+                    <div>
+                      <div style={{ display: "inline-block" }}>
+                        <Input
+                          style={{ width: 200 }}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                        />
+                        <br />
+                        <span
+                          className="productDetailLabel"
+                          style={{ color: "red", width: 200 }}
+                        >
+                          {validateMsg.minPrice}
+                        </span>
+                      </div>
+                      <div style={{ display: "inline-block" }}>
+                        <span style={{ marginLeft: 20, marginRight: 20 }}>
+                          {" "}
+                          -{" "}
+                        </span>
+                        <br />
+                        <span
+                          className="productDetailLabel"
+                          style={{ color: "red", width: 200, marginLeft: 20 }}
+                        >
+                          {null}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "inline-block" }}>
+                        <Input
+                          style={{ width: 200 }}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                        />
+                        <br />
+                        <span
+                          className="productDetailLabel"
+                          
+                        >
+                          {validateMsg.maxPrice}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "inline-block" }}>
+                        <Input
+                          value="VNĐ"
+                          style={{ marginLeft: 10, width: 50 }}
+                        />
+                        <br />
+                        <span
+                          className="productDetailLabel"
+                          style={{ color: "red", marginLeft: 20 }}
+                        >
+                          {null}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <br />
+
+                  <div className="productDetailFormInput">
+                    <span className="productDetailLabel">Đơn vị: </span>
+                    <Select style={{ width: 500 }} onChange={onChangeUnit}>
+                      <Option value="Kg">Kg</Option>
+                    </Select>
                     <span
                       className="productDetailLabel"
-                      style={{ color: "red", marginLeft: 20 }}
+                      
                     >
-                      {null}
+                      {validateMsg.unit}
                     </span>
                   </div>
+                  <br />
+
+                  <div className="productDetailFormInput">
+                    <span className="productDetailLabel">Loại</span>
+                    <Select style={{ width: 500 }} onChange={onChangeCatagory}>
+                      {categories.map((category) => {
+                        return (
+                          <Option value={category.id}>{category.name}</Option>
+                        );
+                      })}
+                    </Select>
+                    <span
+                      className="newProductLabelErr"
+                      
+                    >
+                      {validateMsg.productCategoryId}
+                    </span>
+                  </div>
+                  <br />
+
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    style={{ width: 150, height: 40, borderRadius: 5 }}
+                    onClick={() => handleCreate()}
+                  >
+                    Tạo
+                  </Button>
                 </div>
-              </div>
-              <br />
-
-              <div className="productDetailFormInput">
-                <span className="productDetailLabel">Đơn vị: </span>
-                <Select style={{ width: 500 }} onChange={onChangeUnit}>
-                  <Option value="Kg">Kg</Option>
-                  <Option value="Cành">Cành</Option>
-                </Select>
-                <span className="productDetailLabel" style={{ color: "red" }}>
-                  {validateMsg.unit}
-                </span>
-              </div>
-              <br />
-
-              <div className="productDetailFormInput">
-                <span className="productDetailLabel">Loại</span>
-                <Select style={{ width: 500 }} onChange={onChangeCatagory}>
-                  {categories.map((category) => {
-                    return <Option value={category.id}>{category.name}</Option>;
-                  })}
-                </Select>
-                <span className="productDetailLabel" style={{ color: "red" }}>
-                  {validateMsg.productCategoryId}
-                </span>
-              </div>
-              <br />
-
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={{ width: 150, height: 40, borderRadius: 5 }}
-                onClick={() => handleCreate()}
-              >
-                Tạo
-              </Button>
-              
+              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

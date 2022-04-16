@@ -1,6 +1,5 @@
 import "./campaignList.css";
-import { Button, Input, Modal, Pagination, Select, Spin, Table } from "antd";
-import { EditOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Input, Modal, notification, Result, Select, Spin, Table } from "antd";
 import { useState, useEffect } from "react";
 import campaignsApi from "../../apis/campaignsApi";
 import { Link } from "react-router-dom";
@@ -11,9 +10,9 @@ export default function CampaignList() {
   const [loading, setLoading] = useState(true);
   const [totalRecord, setTotalRecords] = useState(1);
   const [pageSize, setPageSize] = useState(6);
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [status, setStatus] = useState("");
+  const [loadErr, setloadErr] = useState(false); 
   const [flag, setFlag] = useState(true);
   const { info } = Modal;
   const { Search } = Input;
@@ -109,20 +108,48 @@ export default function CampaignList() {
         name: searchValue,
         status: status,
       };
-      console.log(params);
+      setloadErr(false);
       setLoading(true);
-      const campaignsResponse = await campaignsApi.getAll(params);
-      console.log(campaignsResponse);
-      if (campaignsResponse) {
-        setTotalRecords(campaignsResponse.metadata.total);
-        let campainList = [];
-        let index = (page - 1) * pageSize + 1;
-        campaignsResponse.data.map((campaign) => {
-          campainList.push({ index: index++, ...campaign });
+      await campaignsApi
+        .getAll(params)
+        .then((response) => {
+          setTotalRecords(response.metadata.total);
+          let campainList = [];
+          let index = (page - 1) * pageSize + 1;
+          response.data.map((campaign) => {
+            campainList.push({ index: index++, ...campaign });
+          });
+          setCampaigns(campainList);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
         });
-        setCampaigns(campainList);
-      }
-      setLoading(false);
     };
     fetchCampaigns();
   }, [page, flag]);
@@ -141,70 +168,90 @@ export default function CampaignList() {
 
   const onSearch = (e) => {
     setSearchValue(e);
+    setPage(1);
     setFlag(!flag);
   };
 
   const onStatusChange = (e) => {
     setStatus(e);
+    setPage(1);
     setFlag(!flag);
   };
 
   return (
     <div className="campaignList">
-      <div className="wrapper">
-        <div className="productListTitleContainer">
-          <h1 className="productListTitle">Danh Sách Chiến Dịch</h1>
-
-          <Link to="/newCampaign">
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
             <Button
               type="primary"
-              htmlType="submit"
-              style={{
-                width: 150,
-                height: 40,
-                borderRadius: 5,
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
               }}
             >
-              Tạo Mới
-            </Button>
-          </Link>
-        </div>
-        <div>
-          <Search
-            placeholder="Tìm chiến dịch"
-            onSearch={onSearch}
-            style={{ width: 200 }}
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="wrapper">
+          <div className="productListTitleContainer">
+            <h1 className="productListTitle">Danh Sách Chiến Dịch</h1>
+
+            <Link to="/newCampaign">
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{
+                  width: 150,
+                  height: 40,
+                  borderRadius: 5,
+                }}
+              >
+                Tạo Mới
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <Search
+              placeholder="Tìm chiến dịch"
+              onSearch={onSearch}
+              style={{ width: 200 }}
+            />
+            <Select
+              style={{ width: 120, marginLeft: 10 }}
+              placeholder="Trạng thái"
+              onChange={onStatusChange}
+            >
+              <Option value="">Tất cả</Option>
+              <Option value="Sắp mở bán">Sắp Mở Bán</Option>
+              <Option value="Đang diễn ra">Đang Diễn Ra</Option>
+              <Option value="Đã kết thúc">Đã Kết Thúc</Option>
+              <Option value="Đã hủy">Đã Hủy</Option>
+            </Select>
+          </div>
+          <Table
+            style={{ marginTop: 10, minHeight: 400 }}
+            columns={columns}
+            dataSource={campaigns}
+            pagination={{
+              position: ["bottomCenter"],
+              current: page,
+              pageSize: pageSize,
+              total: totalRecord,
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
+            }}
+            loading={loading}
           />
-          <Select
-            style={{ width: 120, marginLeft: 150 }}
-            placeholder="Trạng thái"
-            onChange={onStatusChange}
-          >
-            <Option value=""></Option>
-            <Option value="Sắp mở bán">Sắp Mở Bán</Option>
-            <Option value="Đang diễn ra">Đang Diễn Ra</Option>
-            {/* <Option value="Đã kết thúc">Đã Kết Thúc</Option> */}
-            <Option value="Đã hủy">Đã Hủy</Option>
-          </Select>
         </div>
-        <Table
-          style={{ marginTop: 10, minHeight: 400 }}
-          columns={columns}
-          locale={{emptyText: "Không có dữ liệu!"}}   
-          dataSource={campaigns}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page);
-              setPageSize(pageSize);
-            },
-          }}
-          loading={loading}
-        />
-      </div>
+      )}
     </div>
   );
 }

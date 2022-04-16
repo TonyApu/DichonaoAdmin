@@ -1,6 +1,9 @@
 import axios from "axios";
 import queryString from "query-string";
 
+axios.defaults.timeout = 120000;
+axios.defaults.timeoutErrorMessage='timeout';
+
 const axiosClient = axios.create({
   baseURL: process.env.REACT_APP_API_BASEURL,
   headers: {

@@ -2,7 +2,7 @@ import "./driverList.css";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { SearchOutlined } from "@ant-design/icons";
-import { Button, Input, Select, Table } from "antd";
+import { Button, Input, notification, Result, Select, Table } from "antd";
 import userApi from "../../apis/userApi";
 
 const DriverList = () => {
@@ -10,7 +10,8 @@ const DriverList = () => {
   const [drivers, setDrivers] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(5);
+  const [loadErr, setloadErr] = useState(false);
   const [role, setRole] = useState("driver");
   const [searchValue, setSearchValue] = useState("");
   const [status, setStatus] = useState(null);
@@ -43,7 +44,15 @@ const DriverList = () => {
       title: "Ngày Sinh",
       dataIndex: "dateOfBirth",
       key: "dateOfBirth",
-      render: (text) => <div className="date">{hanleFormatDate(text)}</div>,
+      render: (text) => (
+        <>
+          {text !== null ? (
+            <div className="date">{hanleFormatDate(text)}</div>
+          ) : (
+            ""
+          )}
+        </>
+      ),
     },
 
     {
@@ -94,22 +103,40 @@ const DriverList = () => {
       size: pageSize,
       role: role,
       active: status,
-      name: searchValue
+      name: searchValue,
     };
+    console.log(params);
     const fetchRequests = async () => {
       setLoading(true);
-      const response = await userApi.getAccount(params);
-      if (response) {
-        
-        let listDrivers = [];
-        let index = (page - 1) * pageSize + 1;
-        setTotalRecords(response.metadata.total);
-        response.data.map((user) => {
-          listDrivers.push({index: index++, ...user})
+      setloadErr(false);
+      await userApi
+        .getAccount(params)
+        .then((response) => {
+          let listFarmers = [];
+          let index = (page - 1) * pageSize + 1;
+          setTotalRecords(response.metadata.total);
+          response.data.map((user) => {
+            listFarmers.push({ index: index++, ...user });
+          });
+          setDrivers(listFarmers);
+          setLoading(false);
         })
-        setDrivers(listDrivers);
-        setLoading(false);
-      }
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 3,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 3,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchRequests();
   }, [page, flag]);
@@ -130,6 +157,7 @@ const DriverList = () => {
 
   const onSearch = (e) => {
     setSearchValue(e);
+    setPage(1);
     setFlag(!flag);
   };
 
@@ -141,44 +169,70 @@ const DriverList = () => {
     } else {
       setStatus(null);
     }
+    setPage(1);
     setFlag(!flag);
   }
 
   return (
-    <div className="driverList">
-      <div className="wrapper">
-        <div className="productListTitleContainer">
-          <h1 className="productListTitle">Danh Sách Người Giao Hàng</h1>
-        </div>
-        <div style={{display: "flex", justifyContent: "space-between"}}>
-          <Search
-            placeholder="Tìm khách hàng"
-            style={{ width: 200 }}
-            onSearch={onSearch}
-          />
-          <Select style={{ width: 150}} placeholder="Trạng thái" onChange={onStatusChange}>
-            <Option value=""></Option>
-            <Option value="true">Đang hoạt động</Option>
-            <Option value="false">Tạm khóa</Option>
-          </Select>
-        </div>
-        <Table
-          loading={loading}
-          columns={columns}
-          dataSource={drivers}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page);
-              setPageSize(pageSize);
-            },
-          }}
-          style={{ minHeight: 400, marginTop: 10 }}
-        />
-      </div>
+    <div className="customerList">
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <>
+          <div className="wrapper">
+            <div className="productListTitleContainer">
+              <h1 className="productListTitle">Danh Sách Người Giao Hàng</h1>
+            </div>
+            <div>
+              <Search
+                placeholder="Nhập tên"
+                style={{ width: 200 }}
+                onSearch={onSearch}
+              />
+              <Select
+                style={{ width: 150, marginLeft: 10 }}
+                placeholder="Trạng thái"
+                onChange={onStatusChange}
+              >
+                <Option value="">Tất cả</Option>
+                <Option value="true">Đang hoạt động</Option>
+                <Option value="false">Tạm khóa</Option>
+              </Select>
+            </div>
+            <Table
+              loading={loading}
+              columns={columns}
+              dataSource={drivers}
+              pagination={{
+                position: ["bottomCenter"],
+                current: page,
+                pageSize: pageSize,
+                total: totalRecord,
+                onChange: (page, pageSize) => {
+                  setPage(page);
+                  setPageSize(pageSize);
+                },
+              }}
+              style={{ minHeight: 400, marginTop: 10 }}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

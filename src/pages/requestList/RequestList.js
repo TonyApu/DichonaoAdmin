@@ -1,5 +1,5 @@
 import "./requestList.css";
-import { Button, Input, Pagination, Spin, Table } from "antd";
+import { Button, Input, notification, Pagination, Result, Spin, Table } from "antd";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import campaignsApi from "../../apis/campaignsApi";
@@ -11,6 +11,8 @@ export default function RequestList() {
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pageSize, setPageSize] = useState(6);
+  const [loadErr, setloadErr] = useState(false);
+  const [flag, setFlag] = useState(true);
 
   const columns = [
     {
@@ -73,19 +75,19 @@ export default function RequestList() {
         );
       },
       filterIcon: () => {
-        return <SearchOutlined/>;
+        return <SearchOutlined />;
       },
       onFilter: (value, record) => {
         let total = 0;
         if (record.name.toLowerCase().includes(value.toLowerCase())) {
-          total ++;
+          total++;
         }
         setTotalRecords(total);
         return record.name.toLowerCase().includes(value.toLowerCase());
       },
       render: (text) => <div className="campaignName">{text}</div>,
     },
-   
+
     {
       title: "Số Yêu Cầu",
       dataIndex: "farmApplyRequest",
@@ -93,13 +95,13 @@ export default function RequestList() {
       render: (text) => <div className="number">{text}</div>,
     },
     {
-      title: "Xem Chi Tiết",
+      title: "Hành Động",
       dataIndex: "id",
       key: "id",
       render: (text) => (
         <Link to={`/request/${text}`}>
           <div className="icon">
-            <EyeOutlined />
+            Xem Chi Tiết
           </div>
         </Link>
       ),
@@ -108,47 +110,95 @@ export default function RequestList() {
 
   useEffect(() => {
     const fetchRequests = async () => {
-      const response = await campaignsApi.getAppy();
-      if (response) {
-        setTotalRecords(response.length);
-        let applyList = [];
-        let index = (page - 1) * pageSize + 1;
-        response.map((apply) => {
-          applyList.push({index: index++, ...apply})
+      setloadErr(false);
+      setLoading(true);
+      await campaignsApi
+        .getAppy()
+        .then((response) => {
+          setTotalRecords(response.length);
+          let applyList = [];
+          let index = (page - 1) * pageSize + 1;
+          response.map((apply) => {
+            applyList.push({ index: index++, ...apply });
+          });
+          setRequests(applyList);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
         });
-        setRequests(applyList);
-        setLoading(false);
-      }
     };
     fetchRequests();
   }, [page]);
 
   return (
     <div className="requestList">
-      <div className="wrapper">
-        <div className="productListTitleContainer">
-          <h1 className="productListTitle">
-            Yêu Cầu Tham Gia
-          </h1>
-        </div>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="wrapper">
+          <div className="productListTitleContainer">
+            <h1 className="productListTitle">Yêu Cầu Tham Gia</h1>
+          </div>
 
-        <Table
-          columns={columns}
-          dataSource={requests}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page)
-              setPageSize(pageSize)
-            },
-          }}
-          style={{ height: 400 }}
-          loading={loading}
-        />
-      </div>
+          <Table
+            columns={columns}
+            dataSource={requests}
+            pagination={{
+              position: ["bottomCenter"],
+              current: page,
+              pageSize: pageSize,
+              total: totalRecord,
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
+            }}
+            style={{ height: 400 }}
+            loading={loading}
+          />
+        </div>
+      )}
     </div>
   );
 }

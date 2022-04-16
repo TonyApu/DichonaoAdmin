@@ -14,6 +14,7 @@ import {
   List,
   message,
   Modal,
+  notification,
   Radio,
   Select,
   Space,
@@ -46,13 +47,11 @@ const CampaignDetail = () => {
   const [mapZone, setMapZone] = useState([]);
   const [validateMsg, setValidateMsg] = useState("");
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
   const [loadingList, setLoadingList] = useState(true);
   const [note, setNote] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const navigate = useNavigate();
+  const [loadErr, setloadErr] = useState(false);
   const { confirm } = Modal;
 
   useEffect(() => {
@@ -74,63 +73,90 @@ const CampaignDetail = () => {
 
   useEffect(() => {
     const fetchCampaign = async () => {
-      const response = await campaignsApi.get(param.campaignId);
-      console.log(response);
-      if (response) {
-        setCampaign(response);
-        setCampaignName(response.name);
-        setDescription(response.description);
-        setStartAt(response.startAt);
-        let date = new Date(response.startAt);
-        date.setDate(date.getDate() + 7);
-        setEndAt(date);
-        setProductSalesCampaigns(response.productSalesCampaigns);
-        setCampaignZoneId(response.campaignZoneId);
-        setCampaignDeliveryZones(response.campaignDeliveryZones);
-        setTotalRecords(response.productSalesCampaigns.length);
-        let file = [];
-        file.push({
-          uid: "-1",
-          name: "image.png",
-          status: "done",
-          url: response.image1,
-        });
-        if (response.image2 !== null) {
+      setloadErr(false);
+      setLoading(true);
+      await campaignsApi.get(param.campaignId).then((response) => {
+          setCampaign(response);
+          setCampaignName(response.name);
+          setDescription(response.description);
+          setStartAt(response.startAt);
+          let date = new Date(response.startAt);
+          date.setDate(date.getDate() + 7);
+          setEndAt(date);
+          setProductSalesCampaigns(response.productSalesCampaigns);
+          setCampaignZoneId(response.campaignZoneId);
+          setCampaignDeliveryZones(response.campaignDeliveryZones);
+          let file = [];
           file.push({
-            uid: "-2",
+            uid: "-1",
             name: "image.png",
             status: "done",
-            url: response.image2,
+            url: response.image1,
+          });
+          if (response.image2 !== null) {
+            file.push({
+              uid: "-2",
+              name: "image.png",
+              status: "done",
+              url: response.image2,
+            });
+          }
+          if (response.image3 !== null) {
+            file.push({
+              uid: "-3",
+              name: "image.png",
+              status: "done",
+              url: response.image3,
+            });
+          }
+          if (response.image4 !== null) {
+            file.push({
+              uid: "-4",
+              name: "image.png",
+              status: "done",
+              url: response.image4,
+            });
+          }
+          if (response.image5 !== null) {
+            file.push({
+              uid: "-5",
+              name: "image.png",
+              status: "done",
+              url: response.image5,
+            });
+          }
+          setFileList(file);
+          setLoadingList(false);
+          setLoading(false);
+      }).catch((err) => {
+        if (err.message === "Network Error") {
+          notification.error({
+            duration: 2,
+            message: "Mất kết nối mạng!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.message === "timeout") {
+          notification.error({
+            duration: 2,
+            message: "Server mất thời gian quá lâu để phản hồi!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.response.status === 400) {
+          notification.error({
+            duration: 2,
+            message: "Đã có lỗi xảy ra!",
+            style: { fontSize: 16 },
+          });
+        } else {
+          notification.error({
+            duration: 2,
+            message: "Có lỗi xảy ra trong quá trình xử lý!",
+            style: { fontSize: 16 },
           });
         }
-        if (response.image3 !== null) {
-          file.push({
-            uid: "-3",
-            name: "image.png",
-            status: "done",
-            url: response.image3,
-          });
-        }
-        if (response.image4 !== null) {
-          file.push({
-            uid: "-4",
-            name: "image.png",
-            status: "done",
-            url: response.image4,
-          });
-        }
-        if (response.image5 !== null) {
-          file.push({
-            uid: "-5",
-            name: "image.png",
-            status: "done",
-            url: response.image5,
-          });
-        }
-        setFileList(file);
-        setLoadingList(false);
-        setLoading(false);
-      }
+        setloadErr(true);
+      });
+      
     };
     fetchCampaign();
   }, []);
@@ -215,9 +241,6 @@ const CampaignDetail = () => {
 
   const handleProductChange = async (e) => {
     let listProduct = [];
-    console.log(productSalesCampaigns);
-    console.log(document.getElementById(2).value)
-    console.log(e);
     setLoadingList(true);
     e.map((id) => {
       console.log(id);
@@ -257,7 +280,6 @@ const CampaignDetail = () => {
     });
 
     console.log(listProduct);
-    setTotalRecords(listProduct.length);
     setProductSalesCampaigns(listProduct);
     setLoadingList(false);
   };
@@ -551,9 +573,10 @@ const CampaignDetail = () => {
                 <div className="newCampaignFormInput">
                   <span className="newCampaignLabel">Mô tả: </span>
                   <TextArea
-                    style={{ width: 500 }}
+                    style={{ width: 500, height: 120 }}
                     onChange={(e) => setDescription(e.target.value)}
                     value={description}
+                    
                   />
                   <span className="newCampaignLabel" style={{ color: "red" }}>
                     {validateMsg.description}

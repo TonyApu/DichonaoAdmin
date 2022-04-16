@@ -68,13 +68,13 @@ const FarmHarvest = () => {
   ];
 
   useEffect(() => {
-    const fetchCampaign = async () => {
+    const fetchFarm = async () => {
       const response = await farmApi.get(param.farmId);
       console.log(response);
       setFarm(response);
       setLoading(false);
     };
-    fetchCampaign();
+    fetchFarm();
   }, []);
 
   useEffect(() => {

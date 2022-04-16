@@ -1,20 +1,20 @@
 import "./harvestCampaignList.css";
 import {
+  CheckCircleTwoTone,
   DeleteOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
 import {
-  Pagination,
   Table,
   Radio,
-  Divider,
-  Spin,
   Modal,
   message,
   Space,
-  Input,
   Button,
+  Spin,
+  notification,
+  Result,
 } from "antd";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -22,6 +22,7 @@ import campaignsApi from "../../apis/campaignsApi";
 import harvestCampaignsApi from "../../apis/harvestCampaigns";
 import { async } from "@firebase/util";
 import farmApi from "../../apis/farmApi";
+import TextArea from "antd/lib/input/TextArea";
 
 const HarvestCampaignList = () => {
   const [page, setPage] = useState(1);
@@ -35,6 +36,8 @@ const HarvestCampaignList = () => {
   const [approveRequests, setApproveRequests] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingTable, setLoadingTable] = useState(true);
+  const [loadErr, setloadErr] = useState(false);
   const param = useParams();
   const navigate = useNavigate();
   const [value, setValue] = useState();
@@ -46,7 +49,7 @@ const HarvestCampaignList = () => {
       title: "Hình Ảnh",
       dataIndex: "harvest",
       Id: "harvest",
-      render: (text) => <img className="harvestImage" src={text.image1} />,
+      render: (text) => <img className="farmImage" src={text.image1} />,
     },
     {
       title: "Tên Sản Phẩm",
@@ -86,14 +89,46 @@ const HarvestCampaignList = () => {
   ];
 
   useEffect(() => {
-    const fetchCampaign = async () => {
-      const response = await farmApi.get(param.farmId);
-      console.log(response);
-      setFarm(response);
-      setLoading(false);
+    const fetchFarm = async () => {
+      setLoading(true);
+      setloadErr(false);
+      await farmApi
+        .get(param.farmId)
+        .then((response) => {
+          setFarm(response);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
-    fetchCampaign();
-  }, []);
+    fetchFarm();
+  }, [flag]);
 
   useEffect(() => {
     const params = {
@@ -103,15 +138,46 @@ const HarvestCampaignList = () => {
       farmId: param.farmId,
     };
     const fetchRequests = async () => {
+      setloadErr(false);
       setLoading(true);
-      const response = await campaignsApi.getHarvestApply(params);
-      console.log(response);
-      setHarvestRequests(response.data);
-      setTotalRecords(response.metadata.total);
-      if (response.metadata.total === 0) {
-        navigate(`/request/${param.campaignId}`);
-      }
-      setLoading(false);
+      await campaignsApi
+        .getHarvestApply(params)
+        .then((response) => {
+          setHarvestRequests(response.data);
+          setTotalRecords(response.metadata.total);
+          if (response.metadata.total === 0) {
+            navigate(`/request/${param.campaignId}`);
+          }
+          setLoadingTable(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchRequests();
   }, [page, flag]);
@@ -136,42 +202,61 @@ const HarvestCampaignList = () => {
     setIsModalVisible(false);
   };
 
-  const handleOk = async () => {
+  const handleOk = () => {
     const rejectHarvest = async () => {
       const params = {
         id: deleteId,
         note: value,
       };
-      console.log(params);
       const result = await harvestCampaignsApi.reject(params).catch((err) => {
-        console.log(err);
-        message.error({
-          duration: 2,
-          content: err.response.data.error.message,
-        });
+        if (err.message === "Network Error") {
+          notification.error({
+            duration: 2,
+            message: "Mất kết nối mạng!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.message === "timeout") {
+          notification.error({
+            duration: 2,
+            message: "Server mất thời gian quá lâu để phản hồi!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.response.status === 400) {
+          notification.error({
+            duration: 2,
+            message: "Đã có lỗi xảy ra!",
+            style: { fontSize: 16 },
+          });
+        } else {
+          notification.error({
+            duration: 2,
+            message: "Có lỗi xảy ra trong quá trình xử lý!",
+            style: { fontSize: 16 },
+          });
+        }
+        setloadErr(true);
       });
       if (result === "Update successfully!") {
         message.success({
           duration: 2,
           content: "Từ chối thành công!",
         });
+        setFlag(!flag);
       }
     };
-    await rejectHarvest();
-    setFlag(!flag);
+    rejectHarvest();
   };
 
   const showAcceptConfirm = (requests) => {
-    console.log(requests);
     confirm({
       title: "Bạn có muốn duyệt những sản phẩm này vào chiến dịch?",
-      icon: <ExclamationCircleOutlined />,
+      icon: <CheckCircleTwoTone />,
       content:
         "Khách hàng có thể thấy những sản phẩm này vào ngày chiến dịch bắt đầu mở bán",
-      okText: "Duyệt",
+      okText: "Tiếp Tục",
       okType: "dashed",
       cancelText: "Hủy",
-      async onOk() {
+      onOk() {
         let id = [];
         {
           requests.map((request) => {
@@ -180,21 +265,42 @@ const HarvestCampaignList = () => {
         }
         const approveHarvest = async () => {
           const result = await harvestCampaignsApi.approve(id).catch((err) => {
-            console.log(err);
-            message.error({
-              duration: 2,
-              content: err.response.data.error.message,
-            });
+            if (err.message === "Network Error") {
+              notification.error({
+                duration: 2,
+                message: "Mất kết nối mạng!",
+                style: { fontSize: 16 },
+              });
+            } else if (err.message === "timeout") {
+              notification.error({
+                duration: 2,
+                message: "Server mất thời gian quá lâu để phản hồi!",
+                style: { fontSize: 16 },
+              });
+            } else if (err.response.status === 400) {
+              notification.error({
+                duration: 2,
+                message: "Đã có lỗi xảy ra!",
+                style: { fontSize: 16 },
+              });
+            } else {
+              notification.error({
+                duration: 2,
+                message: "Có lỗi xảy ra trong quá trình xử lý!",
+                style: { fontSize: 16 },
+              });
+            }
+            setloadErr(true);
           });
           if (result === "Update successfully!") {
             message.success({
               duration: 2,
               content: "Duyệt sản phẩm thành công!",
             });
+            setFlag(!flag);
           }
         };
-        await approveHarvest();
-        setFlag(!flag);
+        approveHarvest();
       },
       onCancel() {},
     });
@@ -202,77 +308,119 @@ const HarvestCampaignList = () => {
 
   return (
     <div className="harvestRequestList">
-      <div className="wrapper">
-        <Modal
-          icon={<ExclamationCircleOutlined />}
-          title="Bạn có muốn từ chối sản phẩm này?"
-          visible={isModalVisible}
-          onOk={handleOk}
-          onCancel={handleCancel}
-          okText="Từ Chối"
-          okType="danger"
-          cancelText="Hủy"
-        >
-          <p>Sau khi Xóa Sản phẩm sẽ không thể được bày bán trong chiến dịch</p>
-          <span>Hãy cho chủ nông trại biết lý do nhé:</span>
-          <Radio.Group onChange={(e) => onReasonChange(e)} value={value}>
-            <Space direction="vertical">
-              <Radio value={"Hình ảnh không hợp lệ"}>
-                Hình ảnh không hợp lệ
-              </Radio>
-              <Radio value={"Tên sản phẩm không hợp lệ"}>
-                Tên sản phẩm không hợp lệ
-              </Radio>
-              <Radio value={"Giá sản phẩm không nằm trong khoảng qui định"}>
-                Giá sản phẩm không nằm trong khoảng qui định
-              </Radio>
-              <Radio value={"Khác"}>
-                Khác...
-                {value === "Khác" ? (
-                  <Input
-                    style={{ width: 100, marginLeft: 10 }}
-                    onChange={onReasonChange}
-                  />
-                ) : null}
-              </Radio>
-            </Space>
-          </Radio.Group>
-        </Modal>
-        <Table
-          rowSelection={{
-            type: selectionType,
-            ...rowSelection,
-          }}
-          columns={columns}
-          dataSource={harvestRequests}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page);
-              setPageSize(pageSize);
-            },
-          }}
-          style={{ height: 400 }}
-          loading={loading}
-        />
-      </div>
-
-      <Button
-        key="button"
-        type="primary"
-        htmlType="submit"
-        style={{
-          width: 150,
-          height: 40,
-          borderRadius: 5,
-        }}
-        onClick={() => showAcceptConfirm(approveRequests)}
-      >
-        Duyệt
-      </Button>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="harvestRequestListWrapper">
+          <Modal
+            icon={<ExclamationCircleOutlined />}
+            title="Bạn có muốn từ chối sản phẩm này?"
+            visible={isModalVisible}
+            onOk={handleOk}
+            onCancel={handleCancel}
+            okText="Tiếp Tục"
+            okType="danger"
+            cancelText="Hủy"
+          >
+            <span>Hãy cho chủ nông trại biết lý do nhé:</span>
+            <Radio.Group
+              style={{ marginTop: 20 }}
+              onChange={(e) => onReasonChange(e)}
+              value={value}
+            >
+              <Space direction="vertical">
+                <Radio value={"Hình ảnh không hợp lệ"}>
+                  Hình ảnh không hợp lệ
+                </Radio>
+                <Radio value={"Tên sản phẩm không hợp lệ"}>
+                  Tên sản phẩm không hợp lệ
+                </Radio>
+                <Radio value={"Giá sản phẩm không nằm trong khoảng qui định"}>
+                  Giá sản phẩm không nằm trong khoảng qui định
+                </Radio>
+                <Radio value={"Khác"}>
+                  Khác...
+                  {value === "Khác" ? (
+                    <TextArea
+                      style={{ width: 200, marginLeft: 10 }}
+                      onChange={onReasonChange}
+                    />
+                  ) : null}
+                </Radio>
+              </Space>
+            </Radio.Group>
+          </Modal>
+          {loading ? (
+            <>
+              <Spin
+                style={{ display: "flex", justifyContent: "center" }}
+                size="large"
+              />{" "}
+              <br /> <br />{" "}
+            </>
+          ) : (
+            <div>
+              <div className="farmHarvestfarmName">
+                <span>{farm.name}</span>
+              </div>
+              <div className="farmHarvestInfo">
+                <span>
+                  <b>Địa Chỉ:</b>{" "}
+                </span>
+                <span className="farmHarvestInfoTitle">{farm.address}</span>
+              </div>
+            </div>
+          )}
+          <Table
+            rowSelection={{
+              type: selectionType,
+              ...rowSelection,
+            }}
+            columns={columns}
+            dataSource={harvestRequests}
+            pagination={{
+              position: ["bottomCenter"],
+              current: page,
+              pageSize: pageSize,
+              total: totalRecord,
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
+            }}
+            style={{ height: 400, marginTop: 10 }}
+            loading={loadingTable}
+          />
+          <Button
+            key="button"
+            type="primary"
+            htmlType="submit"
+            style={{
+              width: 150,
+              height: 40,
+              borderRadius: 5,
+            }}
+            onClick={() => showAcceptConfirm(approveRequests)}
+          >
+            Duyệt
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

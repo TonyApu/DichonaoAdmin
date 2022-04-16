@@ -1,5 +1,5 @@
 import "./productList.css";
-import { Button, Input, Pagination, Table } from "antd";
+import { Button, Input, notification, Pagination, Result, Table } from "antd";
 import { useEffect, useState } from "react";
 import productSystemApi from "../../apis/productSystemApi";
 import { Link } from "react-router-dom";
@@ -11,6 +11,8 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [totalRecord, setTotalRecords] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const [loadErr, setloadErr] = useState(false);
+  const [flag, setFlag] = useState(true);
 
   const columns = [
     {
@@ -23,60 +25,6 @@ export default function ProductList() {
       title: "Tên Sản Phẩm",
       dataIndex: "name",
       key: "name",
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => {
-        return (
-          <div style={{ width: 150 }}>
-            <Input
-              //  style={{width: 100}}
-              autoFocus
-              placeholder="Nhập tên "
-              value={selectedKeys[0]}
-              onChange={(e) => {
-                setSelectedKeys(e.target.value ? [e.target.value] : []);
-                confirm({ closeDropdown: false });
-              }}
-              onPressEnter={() => {
-                confirm();
-              }}
-              onBlur={() => {
-                confirm();
-              }}
-            ></Input>
-            <Button
-              type="primary"
-              onClick={() => {
-                confirm();
-              }}
-            >
-              Tìm
-            </Button>
-            <Button
-              type="danger"
-              onClick={() => {
-                clearFilters();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        );
-      },
-      filterIcon: () => {
-        return <SearchOutlined />;
-      },
-      onFilter: (value, record) => {
-        let total = 0;
-        if (record.name.toLowerCase().includes(value.toLowerCase())) {
-          total++;
-        }
-        setTotalRecords(total);
-        return record.name.toLowerCase().includes(value.toLowerCase());
-      },
       render: (text) => <div className="name">{text}</div>,
     },
     {
@@ -89,9 +37,6 @@ export default function ProductList() {
       title: "Giá Thấp Nhất",
       dataIndex: "minPrice",
       key: "minPrice",
-      sorter: (record1, record2) => {
-        return record1.minPrice - record2.minPrice;
-      },
       render: (text) => (
         <div className="price">{text.toLocaleString() + "  VNĐ"}</div>
       ),
@@ -103,9 +48,6 @@ export default function ProductList() {
       render: (text) => (
         <div className="price">{text.toLocaleString() + "  VNĐ"}</div>
       ),
-      sorter: (record1, record2) => {
-        return record1.maxPrice - record2.maxPrice;
-      },
     },
     {
       title: "Đơn Vị",
@@ -128,65 +70,110 @@ export default function ProductList() {
   useEffect(() => {
     const fetchProductList = async () => {
       setLoading(true);
+      setloadErr(false);
       const params = {
         page: page,
         size: pageSize,
       };
-      console.log(params);
-      const response = await productSystemApi.getAllWithPaging(params);
-      console.log(response);
-      if (response) {
-        let productList = [];
-        let index = (page - 1) * pageSize + 1;
-        response.data.map((product) => {
-          productList.push({ index: index++, ...product });
+      await productSystemApi
+        .getAllWithPaging(params)
+        .then((response) => {
+          let productList = [];
+          let index = (page - 1) * pageSize + 1;
+          response.data.map((product) => {
+            productList.push({ index: index++, ...product });
+          });
+          setProductsSystem(productList);
+          setTotalRecords(response.metadata.total);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
         });
-        setProductsSystem(productList);
-        setTotalRecords(response.metadata.total);
-        setLoading(false);
-      }
     };
     fetchProductList();
-  }, [page]);
+  }, [page, flag]);
 
   return (
     <div className="productList">
-      <div className="wrapper">
-        <div className="productListTitleContainer">
-          <h1 className="productListTitle">Danh Sách Sản Phẩm</h1>
-          <Link to="newProduct">
-          <Button
-            type="primary"
-            htmlType="submit"
-            style={{
-              width: 150,
-              height: 40,
-              borderRadius: 5,
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="wrapper">
+          <div className="productListTitleContainer">
+            <h1 className="productListTitle">Danh Sách Sản Phẩm</h1>
+            <Link to="/newProduct">
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{
+                  width: 150,
+                  height: 40,
+                  borderRadius: 5,
+                }}
+              >
+                Tạo Mới
+              </Button>
+            </Link>
+          </div>
+          <Table
+            columns={columns}
+            dataSource={productsSystem}
+            pagination={{
+              position: ["bottomCenter"],
+              current: page,
+              pageSize: pageSize,
+              total: totalRecord,
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
             }}
-          >
-            Tạo Mới
-          </Button>
-          </Link>
+            style={{ minHeight: 400 }}
+            loading={loading}
+          />
         </div>
-        <Table
-          columns={columns}
-          dataSource={productsSystem}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page);
-              setPageSize(pageSize);
-            },
-          }}
-          style={{ minHeight: 400 }}
-          loading={loading}
-        />
-      </div>
-
-      {/* {renderPagination()} */}
+      )}
     </div>
   );
 }

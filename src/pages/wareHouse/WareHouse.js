@@ -11,6 +11,7 @@ import {
   Col,
   Modal,
   message,
+  notification,
 } from "antd";
 import { useEffect, useState } from "react";
 import productSystemApi from "../../apis/productSystemApi";
@@ -34,17 +35,44 @@ export default function WareHouse() {
   const [wareHousesZones, setWareHouseZones] = useState([]);
   const [validateMsg, setValidateMsg] = useState("");
   const [wareHouseManagerID, setWareHouseManagerID] = useState(0);
-  const [zoneDefault, setZoneDefault] = useState([]);
+  const [loadErr, setloadErr] = useState(false); 
+  const [flag, setFlag] = useState(true);
 
   const param = useParams();
-  let naviagte = useNavigate();
+  let navigate = useNavigate();
   const { Option } = Select;
   const { confirm } = Modal;
 
   useEffect(() => {
     const fetchZone = async () => {
-      const response = await externalApi.getAll();
-      setZone(response);
+      setLoading(true);
+      setloadErr(false);
+      await externalApi.getAll().then((response) => {
+        setZone(response);
+        setLoading(false);
+      }).catch((err) => {
+        if (err.message === "timeout") {
+          notification.error({
+            duration: 2,
+            message: "Server mất thời gian quá lâu để phản hồi!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.response.status === 400) {
+          notification.error({
+            duration: 2,
+            message: "Đã có lỗi xảy ra!",
+            style: { fontSize: 16 },
+          });
+        } else {
+          notification.error({
+            duration: 2,
+            message: "Có lỗi xảy ra trong quá trình xử lý!",
+            style: { fontSize: 16 },
+          });
+        }
+        setloadErr(true);
+      });
+      
     };
     fetchZone();
   }, []);
@@ -71,48 +99,79 @@ export default function WareHouse() {
         response.wareHouseZones.map((zone) => {
           zones.push(zone.zoneId)
         });
-        setZoneDefault(zones);
+        setWareHouseZones(zones);
         setWareHouseManagerID(response.wareHouseManagerID);
         setLoading(false);
       }
     };
     fetchWareHouse();
-  }, [param]);
+  }, []);
 
   const showUpdateConfirm = () => {
     confirm({
       title: "Bạn có muốn cập nhật lại thông tin cho kho này?",
       icon: <ExclamationCircleOutlined />,
       content:
-        "Những thay đổi sẽ chỉ áp dụng lên những sản phẩm được tạo sau khi cập nhật!",
+        "",
       okText: "Tiếp Tục",
       okType: "ghost",
       cancelText: "Hủy",
       async onOk() {
         const updateProduct = async () => {
+          let zoneList = [];
+          wareHousesZones.map((zone)=> {
+            zoneList.push({
+              zoneId: zone
+            })
+          })
           const params = {
             id: param.wareHouseId,
             name: wareHouseName,
             address: address,
-            wareHouseManagerID: wareHouseManagerID,
-            wareHouseZones: wareHousesZones
+            warehouseManagerId: wareHouseManagerID,
+            wareHouseZones: zoneList
           };
-          console.log(params);
+          console.log(params);  
           const result = await wareHouseApi.update(params).catch((err) => {
-            message.error({
-              duration: 2,
-              content: err.response.data.error.message,
-            });
+            if (err.message === "Network Error") {
+              notification.error({
+                duration: 2,
+                message: "Mất kết nối mạng!",
+                style: { fontSize: 16 },
+              });
+              setloadErr(true);
+            } else if (err.message === "timeout") {
+              notification.error({
+                duration: 2,
+                message: "Server mất thời gian quá lâu để phản hồi!",
+                style: { fontSize: 16 },
+              });
+              setloadErr(true);
+            } else if (err.response.status === 400) {
+              notification.error({
+                duration: 2,
+                message: "Đã có lỗi xảy ra!",
+                style: { fontSize: 16 },
+              });
+            } else {
+              notification.error({
+                duration: 2,
+                message: err.response.data.error.message,
+                style: { fontSize: 16 },
+              });
+            }
           });
           if (result === "Update successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
-              content: "Cập nhật thành công!",
+              message: "Tạo thành công!",
+              style: { fontSize: 16 },
             });
+            setLoading(false);
+            navigate("/warehouses");
           }
         };
         await updateProduct();
-        naviagte("/warehouses");
       },
       onCancel() {},
     });
@@ -126,7 +185,7 @@ export default function WareHouse() {
       okText: "Tiếp Tục",
       okType: "danger",
       cancelText: "Hủy",
-      async onOk() {
+       onOk() {
         const deleteWareHouse = async () => {
           const result = await wareHouseApi
             .delete(param.wareHouseId)
@@ -137,14 +196,16 @@ export default function WareHouse() {
               });
             });
           if (result === "Delete successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
-              content: "Xóa thành công!",
+              message: "Xóa thành công!",
+              style: { fontSize: 16 },
             });
+            setLoading(false);
+            navigate("/warehouses");
           }
         };
-        await deleteWareHouse();
-        naviagte("/warehouses");
+         deleteWareHouse();
       },
       onCancel() {},
     });
@@ -165,10 +226,6 @@ export default function WareHouse() {
     setValidateMsg(msg);
     if (Object.keys(msg).length > 0) return false;
     return true;
-  };
-
-  const onChangeWarehouseManager = (e) => {
-    setWareHouseManagerID(e);
   };
 
   const handleUpdate = () => {
@@ -215,6 +272,9 @@ export default function WareHouse() {
                     }}
                   />
                 </div>
+                <span className="warehouseLabelErr">
+                  {validateMsg.wareHouseName}
+                </span>
                 <br />
                 <div className="wareHouseFormInput">
                   <span className="wareHouseLabel">Địa Chỉ: </span>
@@ -226,8 +286,8 @@ export default function WareHouse() {
                     }}
                   />
                 </div>
-                <span className="newWareHouseLabel" style={{ color: "red" }}>
-                  {validateMsg.wareHouseName}
+                <span className="warehouseLabelErr">
+                  {validateMsg.address}
                 </span>
                 <br />
 
@@ -236,7 +296,7 @@ export default function WareHouse() {
                   <Select
                     defaultValue={wareHouse.warehouseManagerName}
                     style={{ width: 500 }}
-                    onChange={onChangeWarehouseManager}
+                    onChange={(e) => setWareHouseManagerID(e)}
                     allowClear
                   >
                     {warehouseManagers.map((manager) => {
@@ -252,7 +312,7 @@ export default function WareHouse() {
                     mode="tags"
                     placeholder="Chọn khu vực quản lý"
                     onChange={(e) => handleChangZones(e)}
-                    defaultValue={zoneDefault}
+                    defaultValue={wareHousesZones}
                     style={{ width: 500 }}
                   >
                     {zone.map((zone) => {
@@ -263,7 +323,7 @@ export default function WareHouse() {
                       );
                     })}
                   </Select>
-                  <span className="newWareHouseLabel" style={{ color: "red" }}>
+                  <span className="warehouseLabelErr">
                     {validateMsg.wareHouseZones}
                   </span>
                   <br />

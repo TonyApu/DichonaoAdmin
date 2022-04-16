@@ -50,7 +50,7 @@ const Login = () => {
       </div>
         <div className="loginForm">
           <div className="loginTitle">
-            <h1>Admin Login</h1>
+            <h1>Admin Dichonao</h1>
           </div>
           <Form
             name="basic"

@@ -3,7 +3,12 @@
 }
 
 .newCampaignTitleWrapper {
-  padding: 20px;
+  padding: 10px 20px;
+}
+
+.newCampaignLabelErr{
+  color: red;
+  font-size: 14px;
 }
 
 .newCampaignForm {

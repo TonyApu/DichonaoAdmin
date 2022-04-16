@@ -1,5 +1,5 @@
 import { EyeOutlined } from "@ant-design/icons";
-import { Pagination, Spin, Table } from "antd";
+import { Button, notification, Pagination, Result, Spin, Table } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import campaignsApi from "../../apis/campaignsApi";
@@ -11,7 +11,10 @@ const FarmRequestList = () => {
   const [totalRecord, setTotalRecords] = useState(1);
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingTable, setLoadingTable] = useState(true);
   const [pageSize, setPageSize] = useState(6);
+  const [loadErr, setloadErr] = useState(false);
+  const [flag, setFlag] = useState(true);
 
   const param = useParams();
 
@@ -53,9 +56,7 @@ const FarmRequestList = () => {
       key: "id",
       render: (text) => (
         <Link to={`/request/${param.campaignId}/${text}`}>
-          <div className="icon">
-            Xem Chi Tiết
-          </div>
+          <div className="icon">Xem Chi Tiết</div>
         </Link>
       ),
     },
@@ -63,13 +64,45 @@ const FarmRequestList = () => {
 
   useEffect(() => {
     const fetchCampaign = async () => {
-      const campaignResponse = await campaignsApi.get(param.campaignId);
-      setCampaign(campaignResponse);
-      console.log(campaignResponse);
-      setLoading(false);
+      setLoading(true);
+      setloadErr(false);
+      await campaignsApi
+        .get(param.campaignId)
+        .then((response) => {
+          setCampaign(response);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchCampaign();
-  }, []);
+  }, [flag]);
 
   useEffect(() => {
     const params = {
@@ -77,21 +110,49 @@ const FarmRequestList = () => {
       page: page,
       size: pageSize,
     };
+    setLoadingTable(true);
+    setloadErr(false);
     const fetchRequests = async () => {
-      const response = await campaignsApi.getFarmApply(params);
-      if (response) {
+      await campaignsApi.getFarmApply(params).then((response) => {
         let farmList = [];
         let index = (page - 1) * pageSize + 1;
         response.data.map((farm) => {
           farmList.push({ index: index++, ...farm });
         });
-
         setFarmRequests(farmList);
         setTotalRecords(response.metadata.total);
-      }
+        setLoadingTable(false);
+      }).catch((err) => {
+        if (err.message === "Network Error") {
+          notification.error({
+            duration: 2,
+            message: "Mất kết nối mạng!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.message === "timeout") {
+          notification.error({
+            duration: 2,
+            message: "Server mất thời gian quá lâu để phản hồi!",
+            style: { fontSize: 16 },
+          });
+        } else if (err.response.status === 400) {
+          notification.error({
+            duration: 2,
+            message: "Đã có lỗi xảy ra!",
+            style: { fontSize: 16 },
+          });
+        } else {
+          notification.error({
+            duration: 2,
+            message: "Có lỗi xảy ra trong quá trình xử lý!",
+            style: { fontSize: 16 },
+          });
+        }
+        setloadErr(true);
+      });
     };
     fetchRequests();
-  }, [page]);
+  }, [page, flag]);
 
   const hanleFormatDate = (props) => {
     const date = new Date(props);
@@ -107,82 +168,88 @@ const FarmRequestList = () => {
     return dd + "-" + mm + "-" + yyyy;
   };
 
-  const renderPagination = () => {
-    return (
-      <div className="paging">
-        <Pagination
-          showSizeChanger={false}
-          pageSize={6}
-          defaultCurrent={1}
-          total={totalRecord}
-          onChange={(pageNumber) => setPage(pageNumber)}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="farmRequestList">
-      <div className="farmRequestListWrapper">
-        {loading ? (
-          <>
-            <Spin
-              style={{ display: "flex", justifyContent: "center" }}
-              size="large"
-            />{" "}
-            <br /> <br />{" "}
-          </>
-        ) : (
-          <div>
-            <div className="farmRequestListCampaignName">
-              <span>{campaign.name}</span>
-            </div>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setFlag(!flag);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="farmRequestListWrapper">
+          {loading ? (
+            <>
+              <Spin
+                style={{ display: "flex", justifyContent: "center" }}
+                size="large"
+              />{" "}
+              <br /> <br />{" "}
+            </>
+          ) : (
+            <div>
+              <div className="farmRequestListCampaignName">
+                <span>{campaign.name}</span>
+              </div>
 
-            <div className="farmRequestListInfo">
-              <span>
-                <b>Bắt đầu ngày: </b>{" "}
-              </span>
-              <span className="farmRequestListInfoTitle">
-                {hanleFormatDate(campaign.startAt)}
-              </span>
+              <div className="farmRequestListInfo">
+                <span>
+                  <b>Bắt đầu ngày: </b>{" "}
+                </span>
+                <span className="farmRequestListInfoTitle">
+                  {hanleFormatDate(campaign.startAt)}
+                </span>
+              </div>
+              <div></div>
+              <div className="farmRequestListInfo">
+                <span>
+                  <b>Kết thúc ngày:</b>{" "}
+                </span>
+                <span className="farmRequestListInfoTitle">
+                  {hanleFormatDate(campaign.endAt)}
+                </span>
+              </div>
+              <div className="farmRequestListInfo">
+                <span>
+                  <b>Mô tả:</b>{" "}
+                </span>
+                <span className="farmRequestListInfoTitle">
+                  {campaign.description}
+                </span>
+              </div>
             </div>
-            <div></div>
-            <div className="farmRequestListInfo">
-              <span>
-                <b>Kết thúc ngày:</b>{" "}
-              </span>
-              <span className="farmRequestListInfoTitle">
-                {hanleFormatDate(campaign.endAt)}
-              </span>
-            </div>
-            <div className="farmRequestListInfo">
-              <span>
-                <b>Mô tả:</b>{" "}
-              </span>
-              <span className="farmRequestListInfoTitle">
-                {campaign.description}
-              </span>
-            </div>
+          )}
+          <div className="farmRequestListTable">
+            <Table
+              columns={columns}
+              dataSource={farmRequests}
+              pagination={{
+                position: ["bottomCenter"],
+                current: page,
+                pageSize: pageSize,
+                total: totalRecord,
+                onChange: (page, pageSize) => {
+                  setPage(page);
+                  setPageSize(pageSize);
+                },
+              }}
+              style={{ minHeight: 400 }}
+              loading={loadingTable}
+            />
           </div>
-        )}
-        <div className="farmRequestListTable">
-          <Table
-            columns={columns}
-            dataSource={farmRequests}
-            pagination={{
-              position: ["bottomCenter"],
-              current: page,
-              pageSize: pageSize,
-              total: totalRecord,
-              onChange: (page, pageSize) => {
-                setPage(page);
-                setPageSize(pageSize);
-              },
-            }}
-            style={{ minHeight: 400 }}
-          />
         </div>
-      </div>
+      )}
     </div>
   );
 };

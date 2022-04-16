@@ -83,13 +83,13 @@ export const city = {
     //     "name_with_type": "Tỉnh Lạng Sơn",
     //     "code": "20"
     // },
-    // "75": {
-    //     "name": "Đồng Nai",
-    //     "slug": "dong-nai",
-    //     "type": "tinh",
-    //     "name_with_type": "Tỉnh Đồng Nai",
-    //     "code": "75"
-    // },
+    "75": {
+        "name": "Đồng Nai",
+        "slug": "dong-nai",
+        "type": "tinh",
+        "name_with_type": "Tỉnh Đồng Nai",
+        "code": "75"
+    },
     // "82": {
     //     "name": "Tiền Giang",
     //     "slug": "tien-giang",
