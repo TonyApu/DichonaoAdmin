@@ -1,5 +1,5 @@
 import "./newManager.css";
-import { Input, Select, Modal, message, DatePicker, Button } from "antd";
+import { Input, Select, Modal, message, DatePicker, Button, notification } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import validator from "validator";
@@ -132,15 +132,17 @@ export default function NewManager() {
             .registerWareHouseManager(data)
             .catch((err) => {
               console.log(err);
-              message.error({
+              notification.error({
                 duration: 2,
-                content: err.response.data.error.message,
+                message: err.response.data.error.message,
+                style: { fontSize: 16 }
               });
             });
           if (result === "Create successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
               content: "Tạo thành công!",
+              style: { fontSize: 16 }
             });
           }
         };

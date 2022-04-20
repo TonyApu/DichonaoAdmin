@@ -190,9 +190,9 @@ export default function WareHouse() {
           const result = await wareHouseApi
             .delete(param.wareHouseId)
             .catch((err) => {
-              message.error({
+              notification.error({
                 duration: 2,
-                content: err.response.data.error.message,
+                message: err.response.data.error.message,
               });
             });
           if (result === "Delete successfully!") {

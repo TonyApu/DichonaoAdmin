@@ -8,7 +8,7 @@ import {
   DatePicker,
   Modal,
   message,
-  InputNumber,
+  Timeline,
   notification,
   Result,
   Spin,
@@ -34,6 +34,9 @@ const NewCampaign = () => {
   const [deliveryZone, setDeliveryZone] = useState([]);
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
+  const [startRecruimentAt, setStartRecruimentAt] = useState("");
+  const [endRecruimentAt, setEndRecruimentAt] = useState("");
+  const [startSellingAt, setStartSellingAt] = useState("");
   const [productList, setProductList] = useState([]);
   const [fileList, setFileList] = useState([]);
   const { Option } = Select;
@@ -107,14 +110,6 @@ const NewCampaign = () => {
     fetChDeliveryZone();
   }, [reload]);
 
-  const normFile = (e) => {
-    if (Array.isArray(e)) {
-      return e;
-    }
-
-    return e && e.fileList;
-  };
-
   const onImageChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
   };
@@ -158,11 +153,27 @@ const NewCampaign = () => {
     } else {
       let start = new Date(value);
       setStartAt(start);
-      if (type === "weekly") {
-        let end = new Date(value);
-        end.setDate(end.getDate() + 7);
-        setEndAt(end);
-      }
+    }
+  };
+
+  const handleStartRecruimentAtChange = (value) => {
+    if (value === null) {
+      setStartRecruimentAt("");
+    } else {
+      let start = new Date(value);
+      setStartRecruimentAt(start);
+    }
+  };
+
+  const handleEndRecruimentAtChange = (value) => {
+    if (value === null) {
+      setEndRecruimentAt("");
+    } else {
+      let start = new Date(value);
+      setEndRecruimentAt(start);
+      let startSelling = new Date(value);
+      startSelling.setDate(startSelling.getDate() + 1);
+      setStartSellingAt(startSelling);
     }
   };
 
@@ -225,47 +236,79 @@ const NewCampaign = () => {
 
   const validateAll = () => {
     const msg = {};
-    if (
-      !/^[^-\s][a-zA-Z0-9_@./#&+-ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\W|_]{1,}$/.test(
-        campaignName
-      )
-    ) {
+    if (validator.isEmpty(campaignName.trim())) {
       msg.campaignName = "Tên chiến dịch không hợp lệ";
     }
     if (validator.isEmpty(description.trim())) {
       msg.description = "Mô tả không hợp lệ";
     }
     if (farmZone === "") {
-      msg.farmZone = "Vui lòng chọn khu vực nông trại";
+      msg.farmZone = "Vui lòng chọn mục này";
     }
     if (fileList.length === 0) {
-      msg.fileList = "Vui lòng chọn ảnh";
+      msg.fileList = "Vui lòng chọn chọn mục này";
     }
-    if (startAt === "" || endAt === "") {
-      msg.startAt = "Vui lòng chọn ngày bắt đầu và kết thúc chiến dịch";
+    if (
+      startAt === "" ||
+      endAt === "" ||
+      startRecruimentAt === "" ||
+      endRecruimentAt === ""
+    ) {
+      msg.startAt = "Vui lòng chọn đủ các mốc thời gian của chiến dịch";
     }
-    if (startAt !== "" && endAt !== "") {
+    // if (startAt !== "" && endAt !== "") {
+    //   let start = new Date(startAt).getTime();
+    //   let end = new Date(endAt).getTime();
+    //   let dayDiff = parseInt((end-start)/(24*3600*1000))
+    //   console.log(dayDiff);
+    //   if (dayDiff < 7 || dayDiff > 10) {
+    //     msg.startAt = "Thời gian chiến dịch phải từ 7-10 ngày";
+    //   }
+    // }
+    if (
+      startAt !== "" &&
+      endAt !== "" &&
+      startRecruimentAt !== "" &&
+      endRecruimentAt !== ""
+    ) {
       let start = new Date(startAt).getTime();
       let end = new Date(endAt).getTime();
-      let dayDiff = parseInt((end-start)/(24*3600*1000))
-      console.log(dayDiff);
-      if (dayDiff < 7 || dayDiff > 10) {
-        msg.startAt = "Thời gian chiến dịch phải từ 7-10 ngày";
+      let startRecruiment = new Date(startRecruimentAt).getTime();
+      let startSelling = new Date(startSellingAt).getTime();
+      let endRecruiment = new Date(endRecruimentAt).getTime();
+      let dayDiff1 = parseInt((startRecruiment-start)/(24*3600*1000));
+      let dayDiff2 = parseInt((endRecruiment-startRecruiment)/(24*3600*1000));
+      let dayDiff3 = parseInt((end-startSelling)/(24*3600*1000)); 
+      if (
+        (startRecruiment < start) || (dayDiff2 < 1) || (dayDiff3 < 1)
+      ) {
+        msg.startAt = "Trình tự các mốc thời gian không đúng";
       }
     }
     if (type === "") {
-      msg.type = "Vui lòng chọn loại chiến dịch";
+      msg.type = "Vui lòng chọn mục này";
     }
     if (deliveryZone.length === 0) {
-      msg.deliveryZone = "Vui lòng chọn khu vực giao hàng";
+      msg.deliveryZone = "Vui lòng chọn mục này";
     }
     if (productList.length === 0) {
-      msg.productList = "Vui lòng chọn sản phẩm bày bán trong chiến dịch";
+      msg.productList = "Vui lòng chọn mục này";
     }
     productList.map((product) => {
-      let capacity = document.getElementById(product.id).value;
-      if (!/^[1-9][0-9]{1,3}$/.test(parseInt(capacity))) {
-        msg.capacity = "Số lượng sản phẩm không hợp lệ";
+      let maxCapacity = document.getElementById("max" + product.id).value;
+      let minCapacity = document.getElementById("min" + product.id).value;
+
+      if (maxCapacity !== "" && minCapacity !== "") {
+        if (parseInt(maxCapacity) < parseInt(minCapacity)) {
+          msg.capacity = "Số lượng tối đa phải lớn hơn số tối thiểu";
+        }
+      } else {
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(maxCapacity))) {
+          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+        }
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(minCapacity))) {
+          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+        }
       }
     });
 
@@ -285,24 +328,29 @@ const NewCampaign = () => {
       cancelText: "Hủy",
       onOk() {
         const createCampaign = async () => {
-          
+          let productSalesCampaigns = [];
+          productList.map((product) => {
+            let minCapacity = "";
+            let maxCapacity = "";
+            if (document.getElementById("min" + product.id) !== null) {
+              minCapacity = document.getElementById("min" + product.id).value;
+            }
+            if (document.getElementById("max" + product.id) !== null) {
+              maxCapacity = document.getElementById("max" + product.id).value;
+            }
+            productSalesCampaigns.push({
+              productSystemId: product.id,
+              minCapacity: minCapacity,
+              capacity: maxCapacity,
+            });
+          });
+          setLoading(true);
           const mediaURL = [];
           for (let i = 0; i < fileList.length; i++) {
             const url = await upLoadImage(fileList[i].originFileObj);
             mediaURL.push(url);
           }
-          let productSalesCampaigns = [];
-          productList.map((product) => {
-            let capacity = "";
-            if (document.getElementById(product.id) !== null) {
-              capacity = document.getElementById(product.id).value;
-            }
 
-            productSalesCampaigns.push({
-              productSystemId: product.id,
-              capacity: capacity,
-            });
-          });
           const data = {
             name: campaignName,
             images: mediaURL,
@@ -310,12 +358,14 @@ const NewCampaign = () => {
             type: type,
             startAt: startAt,
             endAt: endAt,
+            startRecruitmentAt: startRecruimentAt,
+            endRecruitmentAt: endRecruimentAt,
             campaignZoneId: farmZone,
             deliveryZoneId: deliveryZone,
             productSalesCampaigns: productSalesCampaigns,
           };
           console.log(data);
-          setLoading(true);
+
           const result = await campaignApi.createCampaign(data).catch((err) => {
             if (err.message === "Network Error") {
               notification.error({
@@ -446,8 +496,8 @@ const NewCampaign = () => {
                       style={{ width: 500 }}
                       onChange={(e) => handleTypeChange(e)}
                     >
-                      <Option value="weekly">Hàng Tuần</Option>
-                      <Option value="event">Sự Kiện</Option>
+                      <Option value="Hàng tuần">Hàng Tuần</Option>
+                      <Option value="Sự kiện">Sự Kiện</Option>
                     </Select>
                     <span className="newCampaignLabelErr">
                       {validateMsg.type}
@@ -459,6 +509,7 @@ const NewCampaign = () => {
                     <span className="newCampaignLabel">
                       Thời Gian Diễn Ra:{" "}
                     </span>
+
                     <div>
                       <div style={{ display: "inline-block" }}>
                         <DatePicker
@@ -466,32 +517,71 @@ const NewCampaign = () => {
                           format="DD-MM-YYYY"
                           onChange={handleStartAtChange}
                           style={{ width: 200 }}
-                          placeholder="Chọn ngày bắt đầu"
+                          placeholder="Ngày khởi tạo"
                         />
                       </div>
 
                       <div style={{ display: "inline-block", marginLeft: 100 }}>
-                        {type === "weekly" && startAt !== "" ? (
-                          <Input
-                            value={formatDate(endAt)}
-                            style={{ width: 200 }}
-                          />
-                        ) : (
-                          <DatePicker
-                            disabledDate={disabledDate}
-                            format="DD-MM-YYYY"
-                            onChange={handleEndAtChange}
-                            style={{ width: 200 }}
-                            placeholder="Chọn ngày kết thúc"
-                          />
-                        )}
+                        <DatePicker
+                          disabledDate={disabledDate}
+                          format="DD-MM-YYYY"
+                          onChange={handleStartRecruimentAtChange}
+                          style={{ width: 200 }}
+                          placeholder="Bắt đầu duyệt đơn"
+                        />
                       </div>
                     </div>
+                    <br />
+                    <div>
+                      <div style={{ display: "inline-block" }}>
+                        <DatePicker
+                          disabledDate={disabledDate}
+                          format="DD-MM-YYYY"
+                          onChange={handleEndRecruimentAtChange}
+                          style={{ width: 200 }}
+                          placeholder="Kết thúc duyệt đơn"
+                        />
+                      </div>
+
+                      <div style={{ display: "inline-block", marginLeft: 100 }}>
+                        <DatePicker
+                          disabledDate={disabledDate}
+                          format="DD-MM-YYYY"
+                          onChange={handleEndAtChange}
+                          style={{ width: 200 }}
+                          placeholder="Ngày kết thúc"
+                        />
+                      </div>
+                    </div>
+
                     <span className="newCampaignLabelErr">
                       {validateMsg.startAt}
                     </span>
                   </div>
                   <br />
+
+                  {startAt !== "" &&
+                  endAt !== "" &&
+                  startRecruimentAt !== "" &&
+                  endRecruimentAt !== "" ? (
+                    <Timeline>
+                      <Timeline.Item color="grey">
+                        Bắt Đầu Chiến Dịch: {formatDate(startAt)}
+                      </Timeline.Item>
+                      <Timeline.Item>
+                        Mở duyệt đơn: {formatDate(startRecruimentAt)}
+                      </Timeline.Item>
+                      <Timeline.Item>
+                        Kết thúc duyệt đơn: {formatDate(endRecruimentAt)}
+                      </Timeline.Item>
+                      <Timeline.Item color="green">
+                        Bắt đầu mở bán: {formatDate(startSellingAt)}
+                      </Timeline.Item>
+                      <Timeline.Item color="red">
+                        Kết thúc chiến dịch: {formatDate(endAt)}
+                      </Timeline.Item>
+                    </Timeline>
+                  ) : null}
 
                   <div className="newCampaignFormInput">
                     <span className="newCampaignLabel">
@@ -598,8 +688,13 @@ const NewCampaign = () => {
                             <div className="newCampaignCapacity">
                               <span>Số lượng ({item.unit}): </span>
                               <Input
-                                style={{ width: 100 }}
-                                id={item.id}
+                                style={{ width: 70, marginLeft: 10 }}
+                                id={"min" + item.id}
+                              />
+                              <span style={{ marginLeft: 10 }}> - </span>
+                              <Input
+                                style={{ width: 70, marginLeft: 10 }}
+                                id={"max" + item.id}
                               />
                             </div>
                           </List.Item>

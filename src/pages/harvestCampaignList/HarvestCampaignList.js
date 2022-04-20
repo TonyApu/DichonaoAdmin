@@ -139,7 +139,7 @@ const HarvestCampaignList = () => {
     };
     const fetchRequests = async () => {
       setloadErr(false);
-      setLoading(true);
+      setLoadingTable(true);
       await campaignsApi
         .getHarvestApply(params)
         .then((response) => {
@@ -203,6 +203,7 @@ const HarvestCampaignList = () => {
   };
 
   const handleOk = () => {
+    setLoadingTable(true);
     const rejectHarvest = async () => {
       const params = {
         id: deleteId,
@@ -237,9 +238,9 @@ const HarvestCampaignList = () => {
         setloadErr(true);
       });
       if (result === "Update successfully!") {
-        message.success({
+        notification.success({
           duration: 2,
-          content: "Từ chối thành công!",
+          message: "Từ chối thành công!",
         });
         setFlag(!flag);
       }
@@ -257,6 +258,7 @@ const HarvestCampaignList = () => {
       okType: "dashed",
       cancelText: "Hủy",
       onOk() {
+        setLoadingTable(true);
         let id = [];
         {
           requests.map((request) => {
@@ -293,9 +295,10 @@ const HarvestCampaignList = () => {
             setloadErr(true);
           });
           if (result === "Update successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
-              content: "Duyệt sản phẩm thành công!",
+              message: "Duyệt sản phẩm thành công!",
+              style: { fontSize: 16 }
             });
             setFlag(!flag);
           }

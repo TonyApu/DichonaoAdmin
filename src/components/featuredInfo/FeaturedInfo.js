@@ -1,40 +1,33 @@
+import { FileTextOutlined, ShopOutlined, ShoppingCartOutlined, SoundOutlined } from "@ant-design/icons";
 import React from "react";
 import "./featuredInfo.css";
-import { ArrowDownward, ArrowUpward } from "@material-ui/icons";
+
 
 export default function FeaturedInfo(props) {
   return (
     <div className="featured">
-      <div className="featuredItem">
+      <div className="featuredItem" style={{backgroundColor: "#affaf5"}}>
         <span className="featuredTitle">Tổng Số Sản Phẩm Hệ Thống</span>
         <div className="featuredMoneyContainer">
           <span className="featuredMoney">{props.products}</span>
-          {/* <span className="featuredMoneyRate">
-            -4% <ArrowDownward className="featuredIcon negative"/>
-          </span> */}
+          <ShoppingCartOutlined style={{fontSize: 20, marginLeft: 10}}/>         
         </div>
-        {/* <span className="featuredSub">So sánh với tháng trước</span> */}
       </div>
-      <div className="featuredItem">
+
+      <div className="featuredItem" style={{backgroundColor: "#ecb5f7"}}>
         <span className="featuredTitle">Số Đơn Hàng</span>
         <div className="featuredMoneyContainer">
           <span className="featuredMoney">{props.orders}</span>
-          {/* <span className="featuredMoneyRate">
-            +9% <ArrowUpward className="featuredIcon" />
-          </span> */}
+          <FileTextOutlined style={{fontSize: 20, marginLeft: 10}}/> 
         </div>
-        {/* <span className="featuredSub">So sánh với tháng trước</span> */}
       </div>
-      <div className="featuredItem">
+
+      <div className="featuredItem" style={{backgroundColor: "#f7b3b2"}}>
         <span className="featuredTitle">Chiến Dịch Đang Diễn Ra</span>
         <div className="featuredMoneyContainer">
           <span className="featuredMoney">{props.campaigns}</span>
-          {/* <span className="featuredMoneyRate">
-            +6% <ArrowUpward className="featuredIcon" />
-          </span> */}
-          {/* <span className="featuredUnit">Tài Khoản</span> */}
+          <SoundOutlined style={{fontSize: 20, marginLeft: 10}}/> 
         </div>
-        {/* <span className="featuredSub">So sánh với tháng trước</span> */}
       </div>
       
     </div>

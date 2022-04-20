@@ -1,9 +1,8 @@
 import "./productList.css";
-import { Button, Input, notification, Pagination, Result, Table } from "antd";
+import { Button, Input, notification, Result, Table } from "antd";
 import { useEffect, useState } from "react";
 import productSystemApi from "../../apis/productSystemApi";
 import { Link } from "react-router-dom";
-import { SearchOutlined } from "@ant-design/icons";
 
 export default function ProductList() {
   const [page, setPage] = useState(1);
@@ -11,8 +10,10 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [totalRecord, setTotalRecords] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const [searchValue, setSearchValue] = useState("");
   const [loadErr, setloadErr] = useState(false);
   const [flag, setFlag] = useState(true);
+  const { Search } = Input;
 
   const columns = [
     {
@@ -74,6 +75,7 @@ export default function ProductList() {
       const params = {
         page: page,
         size: pageSize,
+        "name": searchValue,
       };
       await productSystemApi
         .getAllWithPaging(params)
@@ -119,6 +121,12 @@ export default function ProductList() {
     fetchProductList();
   }, [page, flag]);
 
+  const onSearch = (e) => {
+    setSearchValue(e);
+    setPage(1);
+    setFlag(!flag);
+  };
+
   return (
     <div className="productList">
       {loadErr ? (
@@ -156,6 +164,11 @@ export default function ProductList() {
               </Button>
             </Link>
           </div>
+          <Search
+            placeholder="Tìm chiến dịch"
+            onSearch={onSearch}
+            style={{ width: 200 }}
+          />
           <Table
             columns={columns}
             dataSource={productsSystem}
@@ -169,7 +182,7 @@ export default function ProductList() {
                 setPageSize(pageSize);
               },
             }}
-            style={{ minHeight: 400 }}
+            style={{ minHeight: 400, marginTop: 10}}
             loading={loading}
           />
         </div>

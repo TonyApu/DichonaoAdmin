@@ -239,9 +239,10 @@ export default function ProductDetail() {
               }
             });
           if (result === "Delete successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
               content: "Xóa thành công!",
+              style: { fontSize: 16 }
             });
             navigate("/products");
           }

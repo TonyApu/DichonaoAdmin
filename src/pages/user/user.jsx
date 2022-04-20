@@ -116,6 +116,7 @@ export default function User() {
             notification.success({
               duration: 2,
               message: "Khóa thành công!",
+              style: { fontSize: 16 },
             });
             setReload(!reload);
           }

@@ -20,6 +20,7 @@ import {
   Space,
   Spin,
   Upload,
+  Result
 } from "antd";
 import { Option } from "antd/lib/mentions";
 import TextArea from "antd/lib/input/TextArea";
@@ -52,6 +53,7 @@ const CampaignDetail = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const navigate = useNavigate();
   const [loadErr, setloadErr] = useState(false);
+  const [reload, setReload] = useState(true);
   const { confirm } = Modal;
 
   useEffect(() => {
@@ -75,7 +77,9 @@ const CampaignDetail = () => {
     const fetchCampaign = async () => {
       setloadErr(false);
       setLoading(true);
-      await campaignsApi.get(param.campaignId).then((response) => {
+      await campaignsApi
+        .get(param.campaignId)
+        .then((response) => {
           setCampaign(response);
           setCampaignName(response.name);
           setDescription(response.description);
@@ -128,38 +132,38 @@ const CampaignDetail = () => {
           setFileList(file);
           setLoadingList(false);
           setLoading(false);
-      }).catch((err) => {
-        if (err.message === "Network Error") {
-          notification.error({
-            duration: 2,
-            message: "Mất kết nối mạng!",
-            style: { fontSize: 16 },
-          });
-        } else if (err.message === "timeout") {
-          notification.error({
-            duration: 2,
-            message: "Server mất thời gian quá lâu để phản hồi!",
-            style: { fontSize: 16 },
-          });
-        } else if (err.response.status === 400) {
-          notification.error({
-            duration: 2,
-            message: "Đã có lỗi xảy ra!",
-            style: { fontSize: 16 },
-          });
-        } else {
-          notification.error({
-            duration: 2,
-            message: "Có lỗi xảy ra trong quá trình xử lý!",
-            style: { fontSize: 16 },
-          });
-        }
-        setloadErr(true);
-      });
-      
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchCampaign();
-  }, []);
+  }, [reload]);
 
   const onImageChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
@@ -319,7 +323,6 @@ const CampaignDetail = () => {
     setNote(e.target.value);
   };
 
-
   const handleOk = async () => {
     const removeCampaign = async () => {
       const params = {
@@ -329,21 +332,21 @@ const CampaignDetail = () => {
       console.log(params);
       const result = await campaignsApi.remove(params).catch((err) => {
         console.log(err);
-        message.error({
+        notification.error({
           duration: 2,
-          content: err.response.data.error.message,
+          message: err.response.data.error.message,
         });
       });
       if (result === "Delete successfully!") {
-        message.success({
+        notification.success({
           duration: 2,
-          content: "Xóa thành công!",
+          message: "Xóa thành công!",
         });
       }
     };
     await removeCampaign();
-    navigate("/campaigns")
-  }
+    navigate("/campaigns");
+  };
 
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -396,15 +399,16 @@ const CampaignDetail = () => {
             .updateCampaign(data)
             .catch((err) => {
               console.log(err);
-              message.error({
+              notification.error({
                 duration: 2,
-                content: err.response.data.error.message,
+                message: err.response.data.error.message,
+                style: { fontSize: 16 }
               });
             });
           if (result === "Update successfully!") {
-            message.success({
+            notification.success({
               duration: 2,
-              content: "Cập nhật thành công!",
+              message: "Cập nhật thành công!",
             });
           }
         };
@@ -417,7 +421,7 @@ const CampaignDetail = () => {
 
   const openRejecConfirm = () => {
     setIsModalVisible(true);
-    }
+  };
 
   const handleCreate = () => {
     const isValid = validateAll();
@@ -428,266 +432,290 @@ const CampaignDetail = () => {
 
   return (
     <div className="newCampaign">
-      <div className="newCampaignTitleWrapper">
-        <div className="newCampaignForm">
-          <div className="newCampaignTitleWrapper2">
-            <h1 className="newCampaignTitle">Cập Nhật Chiến Dịch</h1>
-            {loading ? (
-              <>
-                <Spin
-                  style={{ display: "flex", justifyContent: "center" }}
-                  size="large"
-                />{" "}
-                <br /> <br />{" "}
-              </>
-            ) : (
-              <div className="newCampaignFormWrapper">
-                <div className="newCampaignFormInput">
-                  <Modal
-                    icon={<ExclamationCircleOutlined />}
-                    title="Bạn hãy chọn lý do xóa để tiếp tục nhé?"
-                    visible={isModalVisible}
-                    onOk={handleOk}
-                    onCancel={handleCancel}
-                    okText="Từ Chối"
-                    okType="danger"
-                    cancelText="Hủy"
-                  >
-                    <Radio.Group
-                      onChange={(e) => onReasonChange(e)}
-                      value={note}
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setReload(!reload);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="newCampaignTitleWrapper">
+          <div className="newCampaignForm">
+            <div className="newCampaignTitleWrapper2">
+              <h1 className="newCampaignTitle">Cập Nhật Chiến Dịch</h1>
+              {loading ? (
+                <>
+                  <Spin
+                    style={{ display: "flex", justifyContent: "center" }}
+                    size="large"
+                  />{" "}
+                  <br /> <br />{" "}
+                </>
+              ) : (
+                <div className="newCampaignFormWrapper">
+                  <div className="newCampaignFormInput">
+                    <Modal
+                      icon={<ExclamationCircleOutlined />}
+                      title="Bạn hãy chọn lý do xóa để tiếp tục nhé?"
+                      visible={isModalVisible}
+                      onOk={handleOk}
+                      onCancel={handleCancel}
+                      okText="Từ Chối"
+                      okType="danger"
+                      cancelText="Hủy"
                     >
-                      <Space direction="vertical">
-                        <Radio value={"Sai thông tin"}>Sai thông tin</Radio>
-                        <Radio value={"Không có nông trại tham gia"}>
-                          Không có nông trại tham gia
-                        </Radio>
-                        <Radio value={"Khác"}>
-                          Khác...
-                          {note === "Khác" ? (
-                            <Input
-                              style={{ width: 100, marginLeft: 10 }}
-                              onChange={onReasonChange}
-                            />
-                          ) : null}
-                        </Radio>
-                      </Space>
-                    </Radio.Group>
-                  </Modal>
-                  <span className="newCampaignLabel">Tên Chiến Dịch: </span>
-                  <Input
-                    style={{ width: 500 }}
-                    onChange={(e) => setCampaignName(e.target.value)}
-                    defaultValue={campaignName}
-                  />
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.campaignName}
-                  </span>
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
-                  <span className="newCampaignLabel">
-                    Hình Ảnh (tối đa 5):{" "}
-                  </span>
-                  <Upload
-                    action={"http://localhost:3000/"}
-                    listType="picture-card"
-                    fileList={fileList}
-                    onChange={onImageChange}
-                    onPreview={onPreview}
-                    beforeUpload={(file) => {
-                      return false;
-                    }}
-                  >
-                    {fileList.length < 5 && "+ Upload"}
-                  </Upload>
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.fileList}
-                  </span>
-                </div>
-                <br />
-                <div>
-                  <span className="newCampaignLabel">Thời Gian Diễn Ra: </span>
+                      <Radio.Group
+                        onChange={(e) => onReasonChange(e)}
+                        value={note}
+                      >
+                        <Space direction="vertical">
+                          <Radio value={"Sai thông tin"}>Sai thông tin</Radio>
+                          <Radio value={"Không có nông trại tham gia"}>
+                            Không có nông trại tham gia
+                          </Radio>
+                          <Radio value={"Khác"}>
+                            Khác...
+                            {note === "Khác" ? (
+                              <Input
+                                style={{ width: 100, marginLeft: 10 }}
+                                onChange={onReasonChange}
+                              />
+                            ) : null}
+                          </Radio>
+                        </Space>
+                      </Radio.Group>
+                    </Modal>
+                    <span className="newCampaignLabel">Tên Chiến Dịch: </span>
+                    <Input
+                      style={{ width: 500 }}
+                      onChange={(e) => setCampaignName(e.target.value)}
+                      defaultValue={campaignName}
+                    />
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.campaignName}
+                    </span>
+                  </div>
                   <br />
-                  <DatePicker
-                    disabled
-                    format="DD-MM-YYYY"
-                    onChange={handleStartAtChange}
-                    style={{ width: 200 }}
-                    placeholder="Chọn ngày bắt đầu"
-                    defaultValue={moment(Date.parse(startAt))}
-                  />
-                  <span style={{ marginLeft: 10, marginRight: 10 }}>-</span>
-                  <DatePicker
-                    value={moment(endAt)}
-                    format="DD-MM-YYYY"
-                    disabled
-                    style={{ width: 200 }}
-                  />
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">
+                      Hình Ảnh (tối đa 5):{" "}
+                    </span>
+                    <Upload
+                      action={"http://localhost:3000/"}
+                      listType="picture-card"
+                      fileList={fileList}
+                      onChange={onImageChange}
+                      onPreview={onPreview}
+                      beforeUpload={(file) => {
+                        return false;
+                      }}
+                    >
+                      {fileList.length < 5 && "+ Upload"}
+                    </Upload>
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.fileList}
+                    </span>
+                  </div>
                   <br />
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
-                  <span className="newCampaignLabel">Khu Vực Giao Hàng: </span>
-                  <Select
-                    mode="tags"
-                    placeholder="Chọn khu vực giao hàng"
-                    style={{ width: 500 }}
-                    onChange={handleDeliveyZoneChange}
-                    defaultValue={getListDeliveryZone}
-                  >
-                    {mapZone.map((zone) => {
-                      return (
-                        <Option key={zone.id} value={zone.id}>
-                          {zone.name}
-                        </Option>
-                      );
-                    })}
-                  </Select>
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.deliveryZone}
-                  </span>
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
-                  <span className="newCampaignLabel">Khu Vực Nông Trại: </span>
-                  <Select
-                    placeholder="Chọn khu vực nông trại"
-                    style={{ width: 500 }}
-                    onChange={handleFarmZoneChange}
-                    defaultValue={campaignZoneId}
-                  >
-                    {mapZone.map((zone) => {
-                      return (
-                        <Option key={zone.id} value={zone.id}>
-                          {zone.name}
-                        </Option>
-                      );
-                    })}
-                  </Select>
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.farmZone}
-                  </span>
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
-                  <span className="newCampaignLabel">Mô tả: </span>
-                  <TextArea
-                    style={{ width: 500, height: 120 }}
-                    onChange={(e) => setDescription(e.target.value)}
-                    value={description}
-                    
-                  />
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.description}
-                  </span>
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
-                  <span className="newCampaignLabel">
-                    Chọn Loại Sản Phẩm Bày Bán:{" "}
-                  </span>
-                  <Select
-                    mode="tags"
-                    placeholder="Chọn loại sản phẩm"
-                    style={{ width: 500 }}
-                    defaultValue={getListProductInCampaign}
-                    onChange={handleProductChange}
-                  >
-                    {productsSystem.map((product) => {
-                      return (
-                        <Option key={product.id} value={product.id}>
-                          {product.name}
-                        </Option>
-                      );
-                    })}
-                  </Select>
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.productList}
-                  </span>
-                </div>
-                <div className="newCampaignFormInput">
-                  <List
-                    loading={loadingList}
-                    itemLayout="horizontal"
-                    dataSource={productSalesCampaigns}
-                    style={{ width: 500, minHeight: 300 }}
-                    // pagination={{
-                    //   current: page,
-                    //   pageSize: pageSize,
-                    //   total: totalRecords,
-                    //   onChange: (page) => {
-                    //     setPage(page);
-                    //   },
-                    // }}
-                    renderItem={(item) => (
-                      <List.Item>
-                        <List.Item.Meta
-                          key={item.productSystemId}
-                          title={item.productSystem.name}
-                          description={
-                            item.productSystem.minPrice +
-                            " " +
-                            "VNĐ" +
-                            " - " +
-                            item.productSystem.maxPrice +
-                            " " +
-                            "VNĐ"
-                          }
-                        />
-                        <div className="newCampaignCapacity">
-                          <span>Số lượng ({item.productSystem.unit}): </span>
-                          <InputNumber
-                            style={{ width: 100 }}
-                            id={item.productSystemId}
-                            defaultValue={item.capacity}
-                          />
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                  <span className="newCampaignLabel" style={{ color: "red" }}>
-                    {validateMsg.capacity}
-                  </span>
-                </div>
-                <br />
-                <div className="newCampaignFormInput">
                   <div>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      style={{
-                        width: 150,
-                        height: 40,
-                        borderRadius: 5,
-                        marginBottom: 20,
-                      }}
-                      onClick={() => handleCreate()}
+                    <span className="newCampaignLabel">
+                      Thời Gian Diễn Ra:{" "}
+                    </span>
+                    <br />
+                    <DatePicker
+                      disabled
+                      format="DD-MM-YYYY"
+                      onChange={handleStartAtChange}
+                      style={{ width: 200 }}
+                      placeholder="Chọn ngày bắt đầu"
+                      defaultValue={moment(Date.parse(startAt))}
+                    />
+                    <span style={{ marginLeft: 10, marginRight: 10 }}>-</span>
+                    <DatePicker
+                      value={moment(endAt)}
+                      format="DD-MM-YYYY"
+                      disabled
+                      style={{ width: 200 }}
+                    />
+                    <br />
+                  </div>
+                  <br />
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">
+                      Khu Vực Giao Hàng:{" "}
+                    </span>
+                    <Select
+                      mode="tags"
+                      placeholder="Chọn khu vực giao hàng"
+                      style={{ width: 500 }}
+                      onChange={handleDeliveyZoneChange}
+                      defaultValue={getListDeliveryZone}
                     >
-                      Cập Nhật
-                    </Button>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      style={{
-                        width: 150,
-                        height: 40,
-                        borderRadius: 5,
-                        marginBottom: 20,
-                        marginLeft: 200,
-                      }}
-                      danger
-                      onClick={() => openRejecConfirm()}
+                      {mapZone.map((zone) => {
+                        return (
+                          <Option key={zone.id} value={zone.id}>
+                            {zone.name}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.deliveryZone}
+                    </span>
+                  </div>
+                  <br />
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">
+                      Khu Vực Nông Trại:{" "}
+                    </span>
+                    <Select
+                      placeholder="Chọn khu vực nông trại"
+                      style={{ width: 500 }}
+                      onChange={handleFarmZoneChange}
+                      defaultValue={campaignZoneId}
                     >
-                      Xóa
-                    </Button>
+                      {mapZone.map((zone) => {
+                        return (
+                          <Option key={zone.id} value={zone.id}>
+                            {zone.name}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.farmZone}
+                    </span>
+                  </div>
+                  <br />
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">Mô tả: </span>
+                    <TextArea
+                      style={{ width: 500, height: 120 }}
+                      onChange={(e) => setDescription(e.target.value)}
+                      value={description}
+                    />
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.description}
+                    </span>
+                  </div>
+                  <br />
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">
+                      Chọn Loại Sản Phẩm Bày Bán:{" "}
+                    </span>
+                    <Select
+                      mode="tags"
+                      placeholder="Chọn loại sản phẩm"
+                      style={{ width: 500 }}
+                      defaultValue={getListProductInCampaign}
+                      onChange={handleProductChange}
+                    >
+                      {productsSystem.map((product) => {
+                        return (
+                          <Option key={product.id} value={product.id}>
+                            {product.name}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.productList}
+                    </span>
+                  </div>
+                  <div className="newCampaignFormInput">
+                    <List
+                      loading={loadingList}
+                      itemLayout="horizontal"
+                      dataSource={productSalesCampaigns}
+                      style={{ width: 500, minHeight: 300 }}
+                      // pagination={{
+                      //   current: page,
+                      //   pageSize: pageSize,
+                      //   total: totalRecords,
+                      //   onChange: (page) => {
+                      //     setPage(page);
+                      //   },
+                      // }}
+                      renderItem={(item) => (
+                        <List.Item>
+                          <List.Item.Meta
+                            key={item.productSystemId}
+                            title={item.productSystem.name}
+                            description={
+                              item.productSystem.minPrice +
+                              " " +
+                              "VNĐ" +
+                              " - " +
+                              item.productSystem.maxPrice +
+                              " " +
+                              "VNĐ"
+                            }
+                          />
+                          <div className="newCampaignCapacity">
+                            <span>Số lượng ({item.productSystem.unit}): </span>
+                            <InputNumber
+                              style={{ width: 100 }}
+                              id={item.productSystemId}
+                              defaultValue={item.capacity}
+                            />
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                      {validateMsg.capacity}
+                    </span>
+                  </div>
+                  <br />
+                  <div className="newCampaignFormInput">
+                    <div>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        style={{
+                          width: 150,
+                          height: 40,
+                          borderRadius: 5,
+                          marginBottom: 20,
+                        }}
+                        onClick={() => handleCreate()}
+                      >
+                        Cập Nhật
+                      </Button>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        style={{
+                          width: 150,
+                          height: 40,
+                          borderRadius: 5,
+                          marginBottom: 20,
+                          marginLeft: 200,
+                        }}
+                        danger
+                        onClick={() => openRejecConfirm()}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

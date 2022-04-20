@@ -1,5 +1,5 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Form, Input, message, Spin } from "antd";
+import { Button, Form, Input, message, notification, Spin } from "antd";
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import userApi from "../../apis/userApi";
@@ -25,9 +25,9 @@ const Login = () => {
       if (result && result.user.role === "admin") {
         const setUserAction = setUser({ ...result });
         dispatch(setUserAction);
-        message.success({
+        notification.success({
           duration: 3,
-          content: "Đăng nhập thành công",
+          message: "Đăng nhập thành công",
         });
       }
     };
