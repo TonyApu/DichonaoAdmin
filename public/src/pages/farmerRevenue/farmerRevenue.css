@@ -1,0 +1,44 @@
+.farmRevenue {
+  flex: 6;
+}
+
+.farmRevenueWrapper {
+  padding: 0 20px;
+}
+
+.farmRevenueCampaignName {
+  font-size: 24px;
+  font-weight: 400;
+  color: rgb(104, 104, 238);
+}
+
+.farmRevenueCampaignImg {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.farmRevenueInfo {
+  margin-top: 5px;
+  width: 400px;
+}
+
+.farmRevenueTable {
+  margin-top: 20px;
+  -webkit-box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+}
+
+.farmRevenue .farmImage {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.farmRevenue .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}

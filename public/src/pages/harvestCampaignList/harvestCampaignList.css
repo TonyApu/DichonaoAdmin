@@ -1,0 +1,54 @@
+.harvestRequestList {
+  flex: 6;
+}
+
+.harvestRequestListWrapper {
+  padding: 0 20px;
+}
+
+.harvestRequestListfarmName {
+  font-size: 24px;
+  font-weight: 400;
+  color: rgb(104, 104, 238);
+}
+
+.harvestRequestListharvestRequestListImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.harvestRequestListIcon {
+  font-size: 20px;
+}
+
+.harvestRequestListInfo {
+  margin-top: 5px;
+  width: 400px;
+}
+
+.harvestRequestListTable {
+  margin-top: 20px;
+  -webkit-box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+  box-shadow: 0px 0px 16px 3px rgba(94, 108, 99, 0.24);
+}
+
+.harvestRequestList .farmImage {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.harvestRequestList .icon {
+  display: flex;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.harvestRequestList .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
