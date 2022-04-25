@@ -1,0 +1,59 @@
+.requestList {
+  flex: 6;
+}
+
+.requestList .wrapper{
+  padding: 0px  20px;
+}
+
+.requestList .province{
+  width: 100px;
+}
+
+.requestList .status{
+  width: 100px;
+}
+
+.requestList .campaignName{
+  width: 300px;
+}
+
+.requestList .campaignImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.requestList .harvestCampaign{
+  width: 150px;
+}
+
+.requestList .address{
+  width: 250px;
+}
+
+.requestList .number{
+  width: 100px;
+}
+
+.newProductButton{
+  width:200px;
+  border: none;
+  background-color: darkblue;
+  color: white;
+  padding: 7px 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-top: 30px;
+  margin-left: 20px;
+  cursor: pointer;
+  height: 40px;
+}
+
+.requestList .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+

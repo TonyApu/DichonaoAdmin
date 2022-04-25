@@ -1,0 +1,63 @@
+.productList {
+  flex: 6;
+}
+
+.productList .wrapper {
+  padding: 0px 20px;
+}
+
+.productListTitle {
+  font-size: 26px;
+  font-weight: 400;
+  color: rgb(67, 67, 233);
+}
+.productListTitleContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.productList .name {
+  width: 200px;
+}
+
+.productList .province {
+  width: 100px;
+}
+
+.productList .price {
+  width: 150px;
+}
+
+.productList .icon {
+  display: flex;
+  justify-content: space-around;
+  width: 100px;
+}
+
+.productList .campaign_image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.productList .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.productListButton {
+  width: 150px;
+  border: none;
+  background-color: darkblue;
+  color: white;
+  padding: 7px 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  height: 40px;
+}

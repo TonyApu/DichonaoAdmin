@@ -1,0 +1,25 @@
+.campaignRevenue {
+  flex: 6;
+}
+
+.campaignRevenue .wrapper {
+  padding: 0px 20px;
+}
+
+.campaignRevenue .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.campaignRevenue .cusImage {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.campaignRevenue .icon {
+  color: red;
+}

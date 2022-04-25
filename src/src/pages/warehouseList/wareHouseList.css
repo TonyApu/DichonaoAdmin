@@ -1,0 +1,38 @@
+.wareHouseList {
+  flex: 6;
+}
+
+.wareHouseList .wrapper {
+  padding: 0px 20px;
+}
+
+.wareHouseList .name {
+  width: 150px;
+}
+
+.wareHouseList .province {
+  width: 100px;
+}
+
+.wareHouseList .warehouseManagerName {
+  width: 150px;
+}
+
+.wareHouseList .icon {
+  display: flex;
+  justify-content: space-around;
+  width: 100px;
+}
+
+.wareHouseList .campaign_image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.wareHouseList .paging {
+  display: flex;
+  justify-content: center;
+}

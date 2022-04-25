@@ -1,0 +1,60 @@
+.campaignList {
+  flex: 6;
+}
+
+.campaignList .wrapper {
+  padding: 0px 20px;
+}
+
+.campaignList .province {
+  width: 100px;
+}
+
+.campaignList .status {
+  width: 100px;
+}
+
+/* .campaignList .icon {
+  display: flex;
+  justify-content: center;
+  font-size: 20px;
+} */
+
+.campaignList .campaign_image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.campaignList .farmInCampaign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.campaignList .campaign_name{
+  width: 200px;
+}
+
+.newCampaignButton {
+  width: 200px;
+  border: none;
+  background-color: darkblue;
+  color: white;
+  padding: 7px 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-top: 30px;
+  margin-left: 20px;
+  cursor: pointer;
+  height: 40px;
+}
+
+.campaignList .paging {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+
