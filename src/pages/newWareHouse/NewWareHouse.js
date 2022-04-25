@@ -123,12 +123,6 @@ export default function NewWareHouse() {
                 style: { fontSize: 16 },
               });
               setloadErr(true);
-            } else if (err.response.status === 400) {
-              notification.error({
-                duration: 2,
-                message: "Đã có lỗi xảy ra!",
-                style: { fontSize: 16 },
-              });
             } else {
               notification.error({
                 duration: 2,
@@ -156,22 +150,22 @@ export default function NewWareHouse() {
   const validateAll = () => {
     const msg = {};
     if (validator.isEmpty(wareHouseName)) {
-      msg.wareHouseName = "Vui lòng nhập tên kho";
+      msg.wareHouseName = "Vui lòng nhập mục này";
     }
     if (validator.isEmpty(provinceName)) {
-      msg.provinceName = "Vui lòng chọn tỉnh thành";
+      msg.provinceName = "Vui lòng chọn mục này";
     }
     if (validator.isEmpty(districtName)) {
-      msg.districtName = "Vui lòng chọn quận huyện";
+      msg.districtName = "Vui lòng chọn mục này";
     }
     if (validator.isEmpty(subDistrictName)) {
-      msg.subDistrictName = "Vui Lòng chọn xã phường";
+      msg.subDistrictName = "Vui Lòng chọn mục này";
     }
     if (validator.isEmpty(address)) {
-      msg.address = "Vui lòng nhập địa chỉ";
+      msg.address = "Vui lòng nhập mục này";
     }
     if (wareHousesZones.length === 0) {
-      msg.wareHouseZones = "Vui lòng chọn khu vực quản lý";
+      msg.wareHouseZones = "Vui lòng chọn mục này";
     }
 
     setValidateMsg(msg);

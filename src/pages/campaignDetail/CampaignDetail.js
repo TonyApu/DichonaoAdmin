@@ -20,13 +20,15 @@ import {
   Space,
   Spin,
   Upload,
-  Result
+  Result,
+  Timeline,
 } from "antd";
 import { Option } from "antd/lib/mentions";
 import TextArea from "antd/lib/input/TextArea";
 import productSystemApi from "../../apis/productSystemApi";
 import externalApi from "../../apis/externalApi";
 import {
+  CheckCircleTwoTone,
   CheckOutlined,
   ExceptionOutlined,
   ExclamationCircleOutlined,
@@ -39,9 +41,13 @@ const CampaignDetail = () => {
   const [description, setDescription] = useState("");
   const [campaignZoneId, setCampaignZoneId] = useState(null);
   const [deliveryZone, setDeliveryZone] = useState([]);
+  const [type, setType] = useState("");
   const [campaignDeliveryZones, setCampaignDeliveryZones] = useState([]);
-  const [startAt, setStartAt] = useState(null);
-  const [endAt, setEndAt] = useState(new Date());
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
+  const [startRecruimentAt, setStartRecruimentAt] = useState("");
+  const [endRecruimentAt, setEndRecruimentAt] = useState("");
+  const [expectedDeliveryTime, setExpectedDeliveryTime] = useState("");
   const [fileList, setFileList] = useState([]);
   const [productSalesCampaigns, setProductSalesCampaigns] = useState([]);
   const [productsSystem, setProductsSystem] = useState([]);
@@ -81,12 +87,16 @@ const CampaignDetail = () => {
         .get(param.campaignId)
         .then((response) => {
           setCampaign(response);
+          setType(response.type);
           setCampaignName(response.name);
           setDescription(response.description);
           setStartAt(response.startAt);
-          let date = new Date(response.startAt);
-          date.setDate(date.getDate() + 7);
-          setEndAt(date);
+          setEndAt(response.endAt);
+          setStartRecruimentAt(response.startRecruitmentAt);
+          setEndRecruimentAt(response.endRecruitmentAt);
+          let deliveryTime = new Date(response.endAt);
+          deliveryTime.setDate(deliveryTime.getDate() + 2);
+          setExpectedDeliveryTime(deliveryTime);
           setProductSalesCampaigns(response.productSalesCampaigns);
           setCampaignZoneId(response.campaignZoneId);
           setCampaignDeliveryZones(response.campaignDeliveryZones);
@@ -186,17 +196,19 @@ const CampaignDetail = () => {
   };
 
   const upLoadImage = async (imageAsFile) => {
+    let firebaseUrl = "";
     try {
       const storageRef = ref(storage, `/Images/Campaign/${imageAsFile.name}`);
-      const upLoadTask = uploadBytesResumable(storageRef, imageAsFile);
-      const url = await getDownloadURL(upLoadTask.snapshot.ref);
-      if (url) {
-        console.log(url);
-        return url;
+      const upLoadTask = await uploadBytesResumable(storageRef, imageAsFile);
+      if (upLoadTask !== undefined) {
+        const url = await getDownloadURL(storageRef);
+        firebaseUrl = url;
       }
     } catch (error) {
       console.log(error);
     }
+
+    return firebaseUrl;
   };
 
   const getListDeliveryZone = () => {
@@ -214,24 +226,30 @@ const CampaignDetail = () => {
   const getListProductInCampaign = () => {
     let listProduct = [];
     if (campaign !== null) {
-      productSalesCampaigns.map((zone) => {
-        listProduct.push(zone.productSystemId);
+      productSalesCampaigns.map((product) => {
+        listProduct.push(product.productSystemId);
       });
     }
     return listProduct;
   };
 
-  const disabledDate = (current) => {
-    return current && current < moment().endOf("day");
-  };
-
-  const handleStartAtChange = (value) => {
-    console.log(`${value}`);
-    let date = new Date(value);
-    setStartAt(date);
-    date.setDate(date.getDate() + 7);
-    console.log(date);
-    setEndAt(date);
+  const formatDate = (e) => {
+    if (e === "") {
+      return "";
+    } else {
+      let value = new Date(e);
+      let dd = value.getDate();
+      let mm = value.getMonth() + 1;
+      let yyyy = value.getFullYear();
+      if (dd < 10) {
+        dd = "0" + dd;
+      }
+      if (mm < 10) {
+        mm = "0" + mm;
+      }
+      const date = dd + "-" + mm + "-" + yyyy;
+      return date;
+    }
   };
 
   const handleFarmZoneChange = (value) => {
@@ -239,12 +257,12 @@ const CampaignDetail = () => {
   };
 
   const handleDeliveyZoneChange = (value) => {
-    console.log(value);
     setDeliveryZone(value);
   };
 
   const handleProductChange = async (e) => {
     let listProduct = [];
+    let idIndex = 1;
     setLoadingList(true);
     e.map((id) => {
       console.log(id);
@@ -252,10 +270,14 @@ const CampaignDetail = () => {
       for (let index = 0; index < productsSystem.length; index++) {
         if (id === productsSystem[index].id) {
           let product = productsSystem[index];
-          if (document.getElementById(id) !== null) {
+          console.log(product);
+          let min = document.getElementById("min" + id);
+          let max = document.getElementById("max" + id);
+          if (min !== null && max !== null) {
             listProduct.push({
-              id: index,
-              capacity: document.getElementById(id).value,
+              id: idIndex++,
+              maxCapacity: max.value,
+              minCapacity: min.value,
               productSystemId: product.id,
               productSystem: {
                 id: product.id,
@@ -267,8 +289,9 @@ const CampaignDetail = () => {
             });
           } else {
             listProduct.push({
-              id: index,
-              capacity: "",
+              id: idIndex++,
+              minCapacity: "",
+              maxCapacity: "",
               productSystemId: product.id,
               productSystem: {
                 id: product.id,
@@ -282,8 +305,6 @@ const CampaignDetail = () => {
         }
       }
     });
-
-    console.log(listProduct);
     setProductSalesCampaigns(listProduct);
     setLoadingList(false);
   };
@@ -309,8 +330,24 @@ const CampaignDetail = () => {
       msg.productList = "Vui lòng chọn sản phẩm bày bán trong chiến dịch";
     }
     productSalesCampaigns.map((product) => {
-      if (document.getElementById(product.productSystemId).value === "") {
-        msg.capacity = "Vui lòng nhập số lượng cho tất cả sản phẩm";
+      let maxCapacity = document.getElementById(
+        "max" + product.productSystemId
+      ).value;
+      let minCapacity = document.getElementById(
+        "min" + product.productSystemId
+      ).value;
+
+      if (maxCapacity !== "" && minCapacity !== "") {
+        if (parseInt(maxCapacity) < parseInt(minCapacity)) {
+          msg.capacity = "Số lượng tối đa phải lớn hơn số tối thiểu";
+        }
+      } else {
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(maxCapacity))) {
+          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+        }
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(minCapacity))) {
+          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+        }
       }
     });
 
@@ -323,29 +360,54 @@ const CampaignDetail = () => {
     setNote(e.target.value);
   };
 
-  const handleOk = async () => {
+  const handleOk = () => {
     const removeCampaign = async () => {
+      setIsModalVisible(false);
+      setLoading(true);
       const params = {
         id: param.campaignId,
         note: note,
       };
-      console.log(params);
       const result = await campaignsApi.remove(params).catch((err) => {
-        console.log(err);
-        notification.error({
-          duration: 2,
-          message: err.response.data.error.message,
-        });
+        if (err.message === "Network Error") {
+          notification.error({
+            duration: 2,
+            message: "Mất kết nối mạng!",
+            style: { fontSize: 16 },
+          });
+          setloadErr(true);
+        } else if (err.message === "timeout") {
+          notification.error({
+            duration: 2,
+            message: "Server mất thời gian quá lâu để phản hồi!",
+            style: { fontSize: 16 },
+          });
+          setloadErr(true);
+        } else if (err.response.status === 400) {
+          notification.error({
+            duration: 2,
+            message: err.response.data.error.message,
+            style: { fontSize: 16 },
+          });
+          setReload(!reload)
+        } else {
+          notification.error({
+            duration: 2,
+            message: err.response.data.error.message,
+            style: { fontSize: 16 },
+          });
+          setReload(!reload)
+        }
       });
       if (result === "Delete successfully!") {
         notification.success({
           duration: 2,
           message: "Xóa thành công!",
         });
+        navigate("/campaigns");
       }
     };
-    await removeCampaign();
-    navigate("/campaigns");
+    removeCampaign();
   };
 
   const handleCancel = () => {
@@ -355,14 +417,29 @@ const CampaignDetail = () => {
   const showUpdateConfirm = () => {
     confirm({
       title: "Bạn có muốn cập nhật thông tin cho chiến dịch này?",
-      icon: <CheckOutlined />,
+      icon: <CheckCircleTwoTone />,
       content:
         "Những thông tin thay đổi sẽ ảnh hưởng đến các nông trại tham gia vào chiến dịch sau này, bạn hãy kiểm tra kĩ nhé.",
-      okText: "Đồng Ý",
+      okText: "Tiếp Tục",
       okType: "dashed",
       cancelText: "Hủy",
-      async onOk() {
+      onOk() {
         const updateCampaign = async () => {
+          let productSales = [];
+          productSalesCampaigns.map((product) => {
+            const minCapacity = document.getElementById(
+              "min" + product.productSystemId
+            ).value;
+            const maxCapacity = document.getElementById(
+              "max" + product.productSystemId
+            ).value;
+            productSales.push({
+              productSystemId: product.productSystemId,
+              maxCapacity: maxCapacity,
+              minCapacity: minCapacity,
+            });
+          });
+          setLoading(true);
           const mediaURL = [];
           for (let i = 0; i < fileList.length; i++) {
             let url = "";
@@ -374,16 +451,7 @@ const CampaignDetail = () => {
 
             mediaURL.push(url);
           }
-          let productSales = [];
-          productSalesCampaigns.map((product) => {
-            const capacity = document.getElementById(
-              product.productSystemId
-            ).value;
-            productSales.push({
-              productSystemId: product.productSystemId,
-              capacity: capacity,
-            });
-          });
+
           const data = {
             id: param.campaignId,
             name: campaignName,
@@ -393,27 +461,51 @@ const CampaignDetail = () => {
             campaignZoneId: campaignZoneId,
             deliveryZoneId: deliveryZone,
             productSalesCampaigns: productSales,
+            type: type,
           };
           console.log(data);
           const result = await campaignsApi
             .updateCampaign(data)
             .catch((err) => {
-              console.log(err);
-              notification.error({
-                duration: 2,
-                message: err.response.data.error.message,
-                style: { fontSize: 16 }
-              });
+              if (err.message === "Network Error") {
+                notification.error({
+                  duration: 2,
+                  message: "Mất kết nối mạng!",
+                  style: { fontSize: 16 },
+                });
+                setloadErr(true);
+              } else if (err.message === "timeout") {
+                notification.error({
+                  duration: 2,
+                  message: "Server mất thời gian quá lâu để phản hồi!",
+                  style: { fontSize: 16 },
+                });
+                setloadErr(true);
+              } else if (err.response.status === 400) {
+                notification.error({
+                  duration: 2,
+                  message: err.response.data.error.message,
+                  style: { fontSize: 16 },
+                });
+                setReload(!reload)
+              } else {
+                notification.error({
+                  duration: 2,
+                  message: err.response.data.error.message,
+                  style: { fontSize: 16 },
+                });
+                setReload(!reload)
+              }
             });
           if (result === "Update successfully!") {
             notification.success({
               duration: 2,
               message: "Cập nhật thành công!",
             });
+            setReload(!reload);
           }
         };
-        await updateCampaign();
-        // navigate("/campaigns");
+        updateCampaign();
       },
       onCancel() {},
     });
@@ -471,7 +563,7 @@ const CampaignDetail = () => {
                       visible={isModalVisible}
                       onOk={handleOk}
                       onCancel={handleCancel}
-                      okText="Từ Chối"
+                      okText="Tiếp Tục"
                       okType="danger"
                       cancelText="Hủy"
                     >
@@ -502,7 +594,7 @@ const CampaignDetail = () => {
                       onChange={(e) => setCampaignName(e.target.value)}
                       defaultValue={campaignName}
                     />
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.campaignName}
                     </span>
                   </div>
@@ -523,34 +615,52 @@ const CampaignDetail = () => {
                     >
                       {fileList.length < 5 && "+ Upload"}
                     </Upload>
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.fileList}
                     </span>
                   </div>
                   <br />
+
+                  <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">Loại Chiến Dịch: </span>
+                    <Select
+                      style={{ width: 500 }}
+                      onChange={(e) => setType(e)}
+                      defaultValue={type}
+                    >
+                      <Option value="Hàng tuần">Hàng Tuần</Option>
+                      <Option value="Sự kiện">Sự Kiện</Option>
+                    </Select>
+                    <span className="newCampaignLabelErr">
+                      {validateMsg.type}
+                    </span>
+                  </div>
+                  <br />
+
                   <div>
                     <span className="newCampaignLabel">
                       Thời Gian Diễn Ra:{" "}
                     </span>
                     <br />
-                    <DatePicker
-                      disabled
-                      format="DD-MM-YYYY"
-                      onChange={handleStartAtChange}
-                      style={{ width: 200 }}
-                      placeholder="Chọn ngày bắt đầu"
-                      defaultValue={moment(Date.parse(startAt))}
-                    />
-                    <span style={{ marginLeft: 10, marginRight: 10 }}>-</span>
-                    <DatePicker
-                      value={moment(endAt)}
-                      format="DD-MM-YYYY"
-                      disabled
-                      style={{ width: 200 }}
-                    />
                     <br />
+                    <Timeline>
+                      <Timeline.Item>
+                        Bắt đầu duyệt đơn: {formatDate(startRecruimentAt)}
+                      </Timeline.Item>
+                      <Timeline.Item>
+                        Kết thúc duyệt đơn: {formatDate(endRecruimentAt)}
+                      </Timeline.Item>
+                      <Timeline.Item color="green">
+                        Bắt đầu mở bán: {formatDate(startAt)}
+                      </Timeline.Item>
+                      <Timeline.Item color="red">
+                        Kết thúc chiến dịch: {formatDate(endAt)}
+                      </Timeline.Item>
+                      <Timeline.Item>
+                        Giao hàng dự kiến: {formatDate(expectedDeliveryTime)}
+                      </Timeline.Item>
+                    </Timeline>
                   </div>
-                  <br />
                   <div className="newCampaignFormInput">
                     <span className="newCampaignLabel">
                       Khu Vực Giao Hàng:{" "}
@@ -570,7 +680,7 @@ const CampaignDetail = () => {
                         );
                       })}
                     </Select>
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.deliveryZone}
                     </span>
                   </div>
@@ -593,7 +703,7 @@ const CampaignDetail = () => {
                         );
                       })}
                     </Select>
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.farmZone}
                     </span>
                   </div>
@@ -605,7 +715,7 @@ const CampaignDetail = () => {
                       onChange={(e) => setDescription(e.target.value)}
                       value={description}
                     />
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.description}
                     </span>
                   </div>
@@ -629,7 +739,7 @@ const CampaignDetail = () => {
                         );
                       })}
                     </Select>
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.productList}
                     </span>
                   </div>
@@ -639,14 +749,6 @@ const CampaignDetail = () => {
                       itemLayout="horizontal"
                       dataSource={productSalesCampaigns}
                       style={{ width: 500, minHeight: 300 }}
-                      // pagination={{
-                      //   current: page,
-                      //   pageSize: pageSize,
-                      //   total: totalRecords,
-                      //   onChange: (page) => {
-                      //     setPage(page);
-                      //   },
-                      // }}
                       renderItem={(item) => (
                         <List.Item>
                           <List.Item.Meta
@@ -664,16 +766,22 @@ const CampaignDetail = () => {
                           />
                           <div className="newCampaignCapacity">
                             <span>Số lượng ({item.productSystem.unit}): </span>
-                            <InputNumber
-                              style={{ width: 100 }}
-                              id={item.productSystemId}
-                              defaultValue={item.capacity}
+                            <Input
+                              style={{ width: 70, marginLeft: 10 }}
+                              id={"min" + item.productSystemId}
+                              defaultValue={item.minCapacity}
+                            />
+                            <span style={{ marginLeft: 10 }}> - </span>
+                            <Input
+                              style={{ width: 70, marginLeft: 10 }}
+                              id={"max" + item.productSystemId}
+                              defaultValue={item.maxCapacity}
                             />
                           </div>
                         </List.Item>
                       )}
                     />
-                    <span className="newCampaignLabel" style={{ color: "red" }}>
+                    <span className="newCampaignLabelErr">
                       {validateMsg.capacity}
                     </span>
                   </div>

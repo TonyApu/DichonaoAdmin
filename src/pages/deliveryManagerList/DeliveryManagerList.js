@@ -1,8 +1,7 @@
 import "./deliveryManagerList.css";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Input, notification, Pagination, Result, Select, Table } from "antd";
+import { Button, Input, notification, Result, Select, Table } from "antd";
 import userApi from "../../apis/userApi";
 
 const DeliveryManagerList = () => {
@@ -10,7 +9,7 @@ const DeliveryManagerList = () => {
   const [warehouseManager, setWarehouseManagers] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [loadErr, setloadErr] = useState(false);
   const [role, setRole] = useState("warehouseManager");
   const [searchValue, setSearchValue] = useState("");
@@ -123,13 +122,25 @@ const DeliveryManagerList = () => {
         .catch((err) => {
           if (err.message === "Network Error") {
             notification.error({
-              duration: 3,
+              duration: 2,
               message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
               style: { fontSize: 16 },
             });
           } else {
             notification.error({
-              duration: 3,
+              duration: 2,
               message: "Có lỗi xảy ra trong quá trình xử lý!",
               style: { fontSize: 16 },
             });

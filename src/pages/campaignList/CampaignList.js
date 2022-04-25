@@ -9,7 +9,7 @@ export default function CampaignList() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRecord, setTotalRecords] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(10);
   const [searchValue, setSearchValue] = useState("");
   const [status, setStatus] = useState("");
   const [loadErr, setloadErr] = useState(false); 
@@ -42,7 +42,7 @@ export default function CampaignList() {
         } else if (text === "Đang diễn ra") {
           return <div style={{ color: "green" }}>{text}</div>;
         } else {
-          return <div style={{ color: "grey" }}>{text}</div>;
+          return <div style={{ color: "red" }}>{text}</div>;
         }
       },
     },

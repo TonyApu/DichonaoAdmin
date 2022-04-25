@@ -3,7 +3,7 @@ import farmApi from "../../apis/farmApi";
 import { Link, useParams } from "react-router-dom";
 import "./farmRevenue.css";
 import campaignsApi from "../../apis/campaignsApi";
-import { Spin, Table } from "antd";
+import { Button, notification, Result, Spin, Table } from "antd";
 
 const FarmRevenue = () => {
   const param = useParams();
@@ -14,17 +14,50 @@ const FarmRevenue = () => {
   const [farmsInCampaign, setFarmsInCampaign] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loadingTable, setLoadingTable] = useState(true);
+  const [loadErr, setloadErr] = useState(false);
+  const [reload, setReload] = useState(true);
 
   useEffect(() => {
     const fetchCampaign = async () => {
-      const response = await campaignsApi.get(param.campaignId);
-      if (response) {
-        setCampaign(response);
-        setLoading(false);
-      }
+      setLoading(true);
+      setloadErr(false);
+      await campaignsApi
+        .get(param.campaignId)
+        .then((response) => {
+          setCampaign(response);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchCampaign();
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     const fetchFarmsInCampaign = async () => {
@@ -76,7 +109,9 @@ const FarmRevenue = () => {
       title: "Doanh Thu",
       dataIndex: "total",
       key: "total",
-      render: (text) => <div className="address">{text.toLocaleString() + " VNĐ"}</div>,
+      render: (text) => (
+        <div className="address">{text.toLocaleString() + " VNĐ"}</div>
+      ),
     },
 
     {
@@ -107,65 +142,86 @@ const FarmRevenue = () => {
 
   return (
     <div className="farmRevenue">
-      <div className="farmRevenueWrapper">
-        {loading ? (
-          <>
-            <Spin
-              style={{ display: "flex", justifyContent: "center" }}
-              size="large"
-            />{" "}
-            <br /> <br />{" "}
-          </>
-        ) : (
-          <div>
-            <div className="farmRevenueCampaignName">
-              <span>{campaign.name}</span>
-            </div>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setReload(!reload);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="farmRevenueWrapper">
+          {loading ? (
+            <>
+              <Spin
+                style={{ display: "flex", justifyContent: "center" }}
+                size="large"
+              />{" "}
+              <br /> <br />{" "}
+            </>
+          ) : (
+            <div>
+              <div className="farmRevenueCampaignName">
+                <span>{campaign.name}</span>
+              </div>
 
-            <div className="campaignInfo">
-              <span>
-                <b>Bắt đầu ngày: </b>{" "}
-              </span>
-              <span className="campaignInfoTitle">
-                {hanleFormatDate(campaign.startAt)}
-              </span>
+              <div className="campaignInfo">
+                <span>
+                  <b>Bắt đầu ngày: </b>{" "}
+                </span>
+                <span className="campaignInfoTitle">
+                  {hanleFormatDate(campaign.startAt)}
+                </span>
+              </div>
+              <div></div>
+              <div className="campaignInfo">
+                <span>
+                  <b>Kết thúc ngày:</b>{" "}
+                </span>
+                <span className="campaignInfoTitle">
+                  {hanleFormatDate(campaign.endAt)}
+                </span>
+              </div>
+              <div className="campaignInfo">
+                <span>
+                  <b>Mô tả:</b>{" "}
+                </span>
+                <span className="campaignInfoTitle">
+                  {campaign.description}
+                </span>
+              </div>
             </div>
-            <div></div>
-            <div className="campaignInfo">
-              <span>
-                <b>Kết thúc ngày:</b>{" "}
-              </span>
-              <span className="campaignInfoTitle">
-                {hanleFormatDate(campaign.endAt)}
-              </span>
-            </div>
-            <div className="campaignInfo">
-              <span>
-                <b>Mô tả:</b>{" "}
-              </span>
-              <span className="campaignInfoTitle">{campaign.description}</span>
-            </div>
+          )}
+          <div className="farmRevenueTable">
+            <Table
+              loading={loadingTable}
+              columns={columns}
+              dataSource={farmsInCampaign}
+              pagination={{
+                position: ["bottomCenter"],
+                current: page,
+                pageSize: pageSize,
+                total: totalRecord,
+                onChange: (page, pageSize) => {
+                  setPage(page);
+                  setPageSize(pageSize);
+                },
+              }}
+              style={{ minHeight: 300 }}
+            />
           </div>
-        )}
-        <div className="farmRevenueTable">
-          <Table
-            loading={loadingTable}
-            columns={columns}
-            dataSource={farmsInCampaign}
-            pagination={{
-              position: ["bottomCenter"],
-              current: page,
-              pageSize: pageSize,
-              total: totalRecord,
-              onChange: (page, pageSize) => {
-                setPage(page);
-                setPageSize(pageSize);
-              },
-            }}
-            style={{ minHeight: 300 }}
-          />
         </div>
-      </div>
+      )}
     </div>
   );
 };

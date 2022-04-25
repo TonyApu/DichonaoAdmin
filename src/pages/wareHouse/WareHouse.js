@@ -12,10 +12,9 @@ import {
   Modal,
   message,
   notification,
+  Result,
 } from "antd";
 import { useEffect, useState } from "react";
-import productSystemApi from "../../apis/productSystemApi";
-import productCategoriesApi from "../../apis/productCategoriesApi";
 import userApi from "../../apis/userApi";
 import { useParams } from "react-router-dom";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
@@ -35,8 +34,8 @@ export default function WareHouse() {
   const [wareHousesZones, setWareHouseZones] = useState([]);
   const [validateMsg, setValidateMsg] = useState("");
   const [wareHouseManagerID, setWareHouseManagerID] = useState(0);
-  const [loadErr, setloadErr] = useState(false); 
-  const [flag, setFlag] = useState(true);
+  const [loadErr, setloadErr] = useState(false);
+  const [reload, setReload] = useState(true);
 
   const param = useParams();
   let navigate = useNavigate();
@@ -47,35 +46,43 @@ export default function WareHouse() {
     const fetchZone = async () => {
       setLoading(true);
       setloadErr(false);
-      await externalApi.getAll().then((response) => {
-        setZone(response);
-        setLoading(false);
-      }).catch((err) => {
-        if (err.message === "timeout") {
-          notification.error({
-            duration: 2,
-            message: "Server mất thời gian quá lâu để phản hồi!",
-            style: { fontSize: 16 },
-          });
-        } else if (err.response.status === 400) {
-          notification.error({
-            duration: 2,
-            message: "Đã có lỗi xảy ra!",
-            style: { fontSize: 16 },
-          });
-        } else {
-          notification.error({
-            duration: 2,
-            message: "Có lỗi xảy ra trong quá trình xử lý!",
-            style: { fontSize: 16 },
-          });
-        }
-        setloadErr(true);
-      });
-      
+      await externalApi
+        .getAll()
+        .then((response) => {
+          setZone(response);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchZone();
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     const fetchWareHouseManagers = async () => {
@@ -84,7 +91,7 @@ export default function WareHouse() {
       console.log(response);
     };
     fetchWareHouseManagers();
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     const fetchWareHouse = async () => {
@@ -97,7 +104,7 @@ export default function WareHouse() {
         setAddress(response.address);
         let zones = [];
         response.wareHouseZones.map((zone) => {
-          zones.push(zone.zoneId)
+          zones.push(zone.zoneId);
         });
         setWareHouseZones(zones);
         setWareHouseManagerID(response.wareHouseManagerID);
@@ -105,33 +112,32 @@ export default function WareHouse() {
       }
     };
     fetchWareHouse();
-  }, []);
+  }, [reload]);
 
   const showUpdateConfirm = () => {
     confirm({
       title: "Bạn có muốn cập nhật lại thông tin cho kho này?",
       icon: <ExclamationCircleOutlined />,
-      content:
-        "",
+      content: "",
       okText: "Tiếp Tục",
       okType: "ghost",
       cancelText: "Hủy",
-      async onOk() {
+       onOk() {
         const updateProduct = async () => {
+          setLoading(true);
           let zoneList = [];
-          wareHousesZones.map((zone)=> {
+          wareHousesZones.map((zone) => {
             zoneList.push({
-              zoneId: zone
-            })
-          })
+              zoneId: zone,
+            });
+          });
           const params = {
             id: param.wareHouseId,
             name: wareHouseName,
             address: address,
             warehouseManagerId: wareHouseManagerID,
-            wareHouseZones: zoneList
+            wareHouseZones: zoneList,
           };
-          console.log(params);  
           const result = await wareHouseApi.update(params).catch((err) => {
             if (err.message === "Network Error") {
               notification.error({
@@ -150,28 +156,30 @@ export default function WareHouse() {
             } else if (err.response.status === 400) {
               notification.error({
                 duration: 2,
-                message: "Đã có lỗi xảy ra!",
+                message: "Khu vực này đã có nhà kho quản lý",
                 style: { fontSize: 16 },
               });
+              setReload(!reload);
             } else {
               notification.error({
                 duration: 2,
                 message: err.response.data.error.message,
                 style: { fontSize: 16 },
               });
+              setReload(!reload);
             }
           });
           if (result === "Update successfully!") {
             notification.success({
               duration: 2,
-              message: "Tạo thành công!",
+              message: "Cập nhật thành công!",
               style: { fontSize: 16 },
             });
             setLoading(false);
-            navigate("/warehouses");
+            setReload(!reload)
           }
         };
-        await updateProduct();
+         updateProduct();
       },
       onCancel() {},
     });
@@ -185,15 +193,39 @@ export default function WareHouse() {
       okText: "Tiếp Tục",
       okType: "danger",
       cancelText: "Hủy",
-       onOk() {
+      onOk() {
         const deleteWareHouse = async () => {
+          setLoading(true);
           const result = await wareHouseApi
             .delete(param.wareHouseId)
             .catch((err) => {
-              notification.error({
-                duration: 2,
-                message: err.response.data.error.message,
-              });
+              if (err.message === "Network Error") {
+                notification.error({
+                  duration: 2,
+                  message: "Mất kết nối mạng!",
+                  style: { fontSize: 16 },
+                });
+                setloadErr(true);
+              } else if (err.message === "timeout") {
+                notification.error({
+                  duration: 2,
+                  message: "Server mất thời gian quá lâu để phản hồi!",
+                  style: { fontSize: 16 },
+                });
+                setloadErr(true);
+              } else if (err.response.status === 400) {
+                notification.error({
+                  duration: 2,
+                  message: "Đã có lỗi xảy ra!",
+                  style: { fontSize: 16 },
+                });
+              } else {
+                notification.error({
+                  duration: 2,
+                  message: err.response.data.error.message,
+                  style: { fontSize: 16 },
+                });
+              }
             });
           if (result === "Delete successfully!") {
             notification.success({
@@ -205,7 +237,7 @@ export default function WareHouse() {
             navigate("/warehouses");
           }
         };
-         deleteWareHouse();
+        deleteWareHouse();
       },
       onCancel() {},
     });
@@ -239,122 +271,143 @@ export default function WareHouse() {
     console.log(e);
     let zones = [];
     e.map((zone) => {
-      zones.push({zoneId: zone})
-    })
+      zones.push({ zoneId: zone });
+    });
     console.log(zones);
     setWareHouseZones(zones);
   };
 
   return (
     <div className="wareHouse">
-      <div className="wareHouseTitleWrapper">
-        <div className="wareHouseForm">
-          <div className="wareHouseTitleWrapper2">
-            <h1 className="wareHouseTitle">Thông Tin Kho</h1>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setReload(!reload);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="wareHouseTitleWrapper">
+          <div className="wareHouseForm">
+            <div className="wareHouseTitleWrapper2">
+              <h1 className="wareHouseTitle">Thông Tin Kho</h1>
 
-            {loading ? (
-              <>
-                <Spin
-                  style={{ display: "flex", justifyContent: "center" }}
-                  size="large"
-                />{" "}
-                <br /> <br />{" "}
-              </>
-            ) : (
-              <div className="wareHouseFormWrapper">
-                <div className="wareHouseFormInput">
-                  <span className="wareHouseLabel">Tên kho: </span>
-                  <Input
-                    defaultValue={wareHouse.name}
-                    style={{ width: 500 }}
-                    onChange={(e) => {
-                      setWareHouseName(e.target.value);
-                    }}
-                  />
-                </div>
-                <span className="warehouseLabelErr">
-                  {validateMsg.wareHouseName}
-                </span>
-                <br />
-                <div className="wareHouseFormInput">
-                  <span className="wareHouseLabel">Địa Chỉ: </span>
-                  <TextArea
-                    defaultValue={wareHouse.address}
-                    style={{ width: 500 }}
-                    onChange={(e) => {
-                      setAddress(e.target.value);
-                    }}
-                  />
-                </div>
-                <span className="warehouseLabelErr">
-                  {validateMsg.address}
-                </span>
-                <br />
-
-                <div className="wareHouseFormInput">
-                  <span className="wareHouseLabel">Người Quản Lý:</span>
-                  <Select
-                    defaultValue={wareHouse.warehouseManagerName}
-                    style={{ width: 500 }}
-                    onChange={(e) => setWareHouseManagerID(e)}
-                    allowClear
-                  >
-                    {warehouseManagers.map((manager) => {
-                      return <Option value={manager.id}>{manager.name}</Option>;
-                    })}
-                  </Select>
-                </div>
-                <br />
-
-                <div className="newWareHouseFormInput">
-                  <span className="newWareHouseLabel">Khu Vực Quản Lý: </span>
-                  <Select
-                    mode="tags"
-                    placeholder="Chọn khu vực quản lý"
-                    onChange={(e) => handleChangZones(e)}
-                    defaultValue={wareHousesZones}
-                    style={{ width: 500 }}
-                  >
-                    {zone.map((zone) => {
-                      return (
-                        <Option value={zone.id} key={zone.id}>
-                          {zone.name}
-                        </Option>
-                      );
-                    })}
-                  </Select>
+              {loading ? (
+                <>
+                  <Spin
+                    style={{ display: "flex", justifyContent: "center" }}
+                    size="large"
+                  />{" "}
+                  <br /> <br />{" "}
+                </>
+              ) : (
+                <div className="wareHouseFormWrapper">
+                  <div className="wareHouseFormInput">
+                    <span className="wareHouseLabel">Tên kho: </span>
+                    <Input
+                      defaultValue={wareHouse.name}
+                      style={{ width: 500 }}
+                      onChange={(e) => {
+                        setWareHouseName(e.target.value);
+                      }}
+                    />
+                  </div>
                   <span className="warehouseLabelErr">
-                    {validateMsg.wareHouseZones}
+                    {validateMsg.wareHouseName}
                   </span>
                   <br />
+                  <div className="wareHouseFormInput">
+                    <span className="wareHouseLabel">Địa Chỉ: </span>
+                    <TextArea
+                      defaultValue={wareHouse.address}
+                      style={{ width: 500 }}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                      }}
+                    />
+                  </div>
+                  <span className="warehouseLabelErr">
+                    {validateMsg.address}
+                  </span>
+                  <br />
+
+                  <div className="wareHouseFormInput">
+                    <span className="wareHouseLabel">Người Quản Lý:</span>
+                    <Select
+                      defaultValue={wareHouse.warehouseManagerName}
+                      style={{ width: 500 }}
+                      onChange={(e) => setWareHouseManagerID(e)}
+                      allowClear
+                    >
+                      {warehouseManagers.map((manager) => {
+                        return (
+                          <Option value={manager.id}>{manager.name}</Option>
+                        );
+                      })}
+                    </Select>
+                  </div>
+                  <br />
+
+                  <div className="newWareHouseFormInput">
+                    <span className="newWareHouseLabel">Khu Vực Quản Lý: </span>
+                    <Select
+                      mode="tags"
+                      placeholder="Chọn khu vực quản lý"
+                      onChange={(e) => handleChangZones(e)}
+                      defaultValue={wareHousesZones}
+                      style={{ width: 500 }}
+                    >
+                      {zone.map((zone) => {
+                        return (
+                          <Option value={zone.id} key={zone.id}>
+                            {zone.name}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    <span className="warehouseLabelErr">
+                      {validateMsg.wareHouseZones}
+                    </span>
+                    <br />
+                  </div>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    style={{ width: 150, height: 40, borderRadius: 5 }}
+                    onClick={() => handleUpdate()}
+                  >
+                    Cập nhật
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    style={{
+                      width: 150,
+                      height: 40,
+                      borderRadius: 5,
+                      marginLeft: 50,
+                    }}
+                    danger
+                    onClick={() => showDeleteConfirm()}
+                  >
+                    Xóa
+                  </Button>
                 </div>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  style={{ width: 150, height: 40, borderRadius: 5 }}
-                  onClick={() => handleUpdate()}
-                >
-                  Cập nhật
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  style={{
-                    width: 150,
-                    height: 40,
-                    borderRadius: 5,
-                    marginLeft: 50,
-                  }}
-                  danger
-                  onClick={() => showDeleteConfirm()}
-                >
-                  Xóa
-                </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

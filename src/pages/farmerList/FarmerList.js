@@ -10,7 +10,7 @@ const FarmerList = () => {
   const [farmer, setFarmers] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [role, setRole] = useState("farmer")
   const [searchValue, setSearchValue] = useState("");
   const [loadErr, setloadErr] = useState(false);
@@ -123,13 +123,25 @@ const FarmerList = () => {
         .catch((err) => {
           if (err.message === "Network Error") {
             notification.error({
-              duration: 3,
+              duration: 2,
               message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
               style: { fontSize: 16 },
             });
           } else {
             notification.error({
-              duration: 3,
+              duration: 2,
               message: "Có lỗi xảy ra trong quá trình xử lý!",
               style: { fontSize: 16 },
             });

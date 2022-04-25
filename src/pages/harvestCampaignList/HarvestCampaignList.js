@@ -246,7 +246,20 @@ const HarvestCampaignList = () => {
       }
     };
     rejectHarvest();
+    
   };
+
+  const handleApprove = (props) => {
+    if (approveRequests.length === 0) {
+      notification.error({
+        duration: 2,
+        message: "Vui lòng chọn sản phẩm để duyệt.",
+        style: { fontSize: 16 },
+      });
+    } else {
+      showAcceptConfirm(props);
+    }
+  }
 
   const showAcceptConfirm = (requests) => {
     confirm({
@@ -418,7 +431,7 @@ const HarvestCampaignList = () => {
               height: 40,
               borderRadius: 5,
             }}
-            onClick={() => showAcceptConfirm(approveRequests)}
+            onClick={() => handleApprove(approveRequests)}
           >
             Duyệt
           </Button>

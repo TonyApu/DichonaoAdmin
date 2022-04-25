@@ -1,4 +1,4 @@
-import { Button, DatePicker, Table } from "antd";
+import { Button, DatePicker, Table, notification, Result } from "antd";
 import React, { useEffect, useState } from "react";
 import farmOrderApi from "../../apis/farmOrderApi";
 import "./farmerRevenue.css";
@@ -11,29 +11,55 @@ const FarmerRevenue = () => {
   const [startAt, setStartAt] = useState(null);
   const [endAt, setEndAt] = useState(null);
   const [farmerRevenue, setFarmerRevenue] = useState(null);
+  const [loadErr, setloadErr] = useState(false);
+  const [reload, setReload] = useState(true);
   const [validateMsg, setValidateMsg] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setloadErr(false);
       const params = {
         from: startAt,
         to: endAt,
       };
-      const response = await farmOrderApi.getRevenue(params);
-      if (response) {
-        let index = 1;
-        let farmers = [];
-        response.map((farmer) => {
-          farmers.push({index: index, ...farmer})
+      await farmOrderApi
+        .getRevenue(params)
+        .then((response) => {
+          let index = 1;
+          let farmers = [];
+          response.map((farmer) => {
+            farmers.push({ index: index++, ...farmer });
+          });
+          setFarmerRevenue(farmers);
+          setTotalRecords(response.length);
+          setLoading(false);
         })
-        setFarmerRevenue(farmers);
-        setTotalRecords(response.length);
-        setLoading(false);
-        
-      }
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
     };
     fetchData();
-  }, []);
+  }, [reload]);
 
   const columns = [
     {
@@ -123,8 +149,8 @@ const FarmerRevenue = () => {
         let farmers = [];
         console.log(response);
         response.map((farmer) => {
-          farmers.push({index: index++, ...farmer});
-        })
+          farmers.push({ index: index++, ...farmer });
+        });
         console.log(farmers);
         setFarmerRevenue(farmers);
         setLoading(false);
@@ -133,87 +159,106 @@ const FarmerRevenue = () => {
   };
   return (
     <div className="farmRevenue">
-      <div className="farmRevenueWrapper">
-        <div className="farmRevenueCampaignName">
-          <span>Thống Kê Doanh Thu</span>
-        </div>
-
-        <div className="">
-          <div style={{ display: "inline-block" }}>
-            <span>Từ: </span>
-            <DatePicker
-              format="DD-MM-YYYY"
-              onChange={handleStartAtChange}
-              style={{ width: 200, marginLeft: 10 }}
-              placeholder="Chọn ngày bắt đầu"
-            />
-            <br />
-            <span className="newCampaignLabel" style={{ color: "red" }}>
-              {validateMsg.startAt}
-            </span>
-          </div>
-
-          <div style={{ display: "inline-block" }}>
-            <span style={{ marginLeft: 20, marginRight: 20 }}> {"  "} </span>
-            <br />
-            <span
-              className="productDetailLabel"
-              style={{ color: "red", width: 200, marginLeft: 10 }}
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setReload(!reload);
+              }}
             >
-              {null}
-            </span>
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="farmRevenueWrapper">
+          <div className="farmRevenueCampaignName">
+            <span>Thống Kê Doanh Thu</span>
           </div>
 
-          <div style={{ display: "inline-block" }}>
-            <span>Đến: </span>
-            <span className="farmRevenueInfoTitle">
+          <div className="">
+            <div style={{ display: "inline-block" }}>
+              <span>Từ: </span>
               <DatePicker
                 format="DD-MM-YYYY"
-                onChange={handleEndAtChange}
+                onChange={handleStartAtChange}
                 style={{ width: 200, marginLeft: 10 }}
-                placeholder="Chọn ngày kết thúc"
+                placeholder="Chọn ngày bắt đầu"
               />
-            </span>
-            <br />
-            <span className="newCampaignLabel" style={{ color: "red" }}>
-              {validateMsg.endAt}
-            </span>
+              <br />
+              <span className="newCampaignLabel" style={{ color: "red" }}>
+                {validateMsg.startAt}
+              </span>
+            </div>
+
+            <div style={{ display: "inline-block" }}>
+              <span style={{ marginLeft: 20, marginRight: 20 }}> {"  "} </span>
+              <br />
+              <span
+                className="productDetailLabel"
+                style={{ color: "red", width: 200, marginLeft: 10 }}
+              >
+                {null}
+              </span>
+            </div>
+
+            <div style={{ display: "inline-block" }}>
+              <span>Đến: </span>
+              <span className="farmRevenueInfoTitle">
+                <DatePicker
+                  format="DD-MM-YYYY"
+                  onChange={handleEndAtChange}
+                  style={{ width: 200, marginLeft: 10 }}
+                  placeholder="Chọn ngày kết thúc"
+                />
+              </span>
+              <br />
+              <span className="newCampaignLabel" style={{ color: "red" }}>
+                {validateMsg.endAt}
+              </span>
+            </div>
+          </div>
+
+          <div className="farmRevenueInfo">
+            <Button
+              type="primary"
+              htmlType="submit"
+              style={{
+                width: 150,
+                height: 40,
+                borderRadius: 5,
+              }}
+              onClick={() => handleCheck()}
+            >
+              Kiểm Tra
+            </Button>
+          </div>
+          <div className="farmRevenueTable">
+            <Table
+              columns={columns}
+              dataSource={farmerRevenue}
+              loading={loading}
+              pagination={{
+                position: ["bottomCenter"],
+                current: page,
+                pageSize: pageSize,
+                total: totalRecord,
+                onChange: (page, pageSize) => {
+                  setPage(page);
+                  setPageSize(pageSize);
+                },
+              }}
+              style={{ minHeight: 400 }}
+            />
           </div>
         </div>
-
-        <div className="farmRevenueInfo">
-          <Button
-            type="primary"
-            htmlType="submit"
-            style={{
-              width: 150,
-              height: 40,
-              borderRadius: 5,
-            }}
-            onClick={() => handleCheck()}
-          >
-            Kiểm Tra
-          </Button>
-        </div>
-        <div className="farmRevenueTable">
-          <Table
-            columns={columns}
-            dataSource={farmerRevenue}
-            loading={loading}
-            pagination={{
-              position: ["bottomCenter"],
-              current: page,
-              pageSize: pageSize,
-              total: totalRecord,
-              onChange: (page, pageSize) => {
-                setPage(page);
-                setPageSize(pageSize);
-              },
-            }}
-            style={{ minHeight: 400 }}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 };

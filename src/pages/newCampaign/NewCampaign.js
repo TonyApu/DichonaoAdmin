@@ -7,7 +7,6 @@ import {
   Button,
   DatePicker,
   Modal,
-  message,
   Timeline,
   notification,
   Result,
@@ -22,7 +21,7 @@ import validator from "validator";
 import moment from "moment";
 import TextArea from "antd/lib/input/TextArea";
 import productSystemApi from "../../apis/productSystemApi";
-import { CheckOutlined } from "@ant-design/icons";
+import { CheckCircleTwoTone } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const NewCampaign = () => {
@@ -36,11 +35,12 @@ const NewCampaign = () => {
   const [endAt, setEndAt] = useState("");
   const [startRecruimentAt, setStartRecruimentAt] = useState("");
   const [endRecruimentAt, setEndRecruimentAt] = useState("");
-  const [startSellingAt, setStartSellingAt] = useState("");
+  const [expectedDeliveryTime, setExpectedDeliveryTime] = useState("");
   const [productList, setProductList] = useState([]);
   const [fileList, setFileList] = useState([]);
   const { Option } = Select;
-  const [zone, setZone] = useState([]);
+  const [zone1, setZone1] = useState([]);
+  const [zone2, setZone2] = useState([]);
   const [validateMsg, setValidateMsg] = useState("");
   const [loadErr, setloadErr] = useState(false);
   const [reload, setReload] = useState(true);
@@ -67,6 +67,18 @@ const NewCampaign = () => {
               message: "Mất kết nối mạng!",
               style: { fontSize: 16 },
             });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
           } else {
             notification.error({
               duration: 2,
@@ -85,9 +97,9 @@ const NewCampaign = () => {
       setLoading(true);
       setloadErr(false);
       await externalApi
-        .getAll()
+        .getDeliveryZone()
         .then((response) => {
-          setZone(response);
+          setZone1(response);
           setLoading(false);
         })
         .catch((err) => {
@@ -95,6 +107,18 @@ const NewCampaign = () => {
             notification.error({
               duration: 2,
               message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
               style: { fontSize: 16 },
             });
           } else {
@@ -108,6 +132,48 @@ const NewCampaign = () => {
         });
     };
     fetChDeliveryZone();
+  }, [reload]);
+
+  useEffect(() => {
+    const fetCampaignZone = async () => {
+      setLoading(true);
+      setloadErr(false);
+      await externalApi
+        .getCampaignZone()
+        .then((response) => {
+          setZone2(response);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
+        });
+    };
+    fetCampaignZone();
   }, [reload]);
 
   const onImageChange = ({ fileList: newFileList }) => {
@@ -131,16 +197,19 @@ const NewCampaign = () => {
   };
 
   const upLoadImage = async (imageAsFile) => {
+    let firebaseUrl = "";
     try {
       const storageRef = ref(storage, `/Images/Campaign/${imageAsFile.name}`);
-      const upLoadTask = uploadBytesResumable(storageRef, imageAsFile);
-      const url = await getDownloadURL(upLoadTask.snapshot.ref);
-      if (url) {
-        return url;
+      const upLoadTask = await uploadBytesResumable(storageRef, imageAsFile);
+      if (upLoadTask !== undefined) {
+        const url = await getDownloadURL(storageRef);
+        firebaseUrl = url;
       }
     } catch (error) {
       console.log(error);
     }
+
+    return firebaseUrl;
   };
 
   const disabledDate = (current) => {
@@ -171,9 +240,6 @@ const NewCampaign = () => {
     } else {
       let start = new Date(value);
       setEndRecruimentAt(start);
-      let startSelling = new Date(value);
-      startSelling.setDate(startSelling.getDate() + 1);
-      setStartSellingAt(startSelling);
     }
   };
 
@@ -183,6 +249,9 @@ const NewCampaign = () => {
     } else {
       let date = new Date(value);
       setEndAt(date);
+      let deliveryTime = new Date(value);
+      deliveryTime.setDate(deliveryTime.getDate() + 2);
+      setExpectedDeliveryTime(deliveryTime);
     }
   };
 
@@ -215,11 +284,6 @@ const NewCampaign = () => {
 
   const handleTypeChange = (e) => {
     setType(e);
-    if (startAt !== "") {
-      let date = new Date(startAt);
-      date.setDate(startAt.getDate() + 7);
-      setEndAt(date);
-    }
   };
 
   const handleProductChange = async (e) => {
@@ -256,15 +320,6 @@ const NewCampaign = () => {
     ) {
       msg.startAt = "Vui lòng chọn đủ các mốc thời gian của chiến dịch";
     }
-    // if (startAt !== "" && endAt !== "") {
-    //   let start = new Date(startAt).getTime();
-    //   let end = new Date(endAt).getTime();
-    //   let dayDiff = parseInt((end-start)/(24*3600*1000))
-    //   console.log(dayDiff);
-    //   if (dayDiff < 7 || dayDiff > 10) {
-    //     msg.startAt = "Thời gian chiến dịch phải từ 7-10 ngày";
-    //   }
-    // }
     if (
       startAt !== "" &&
       endAt !== "" &&
@@ -274,14 +329,13 @@ const NewCampaign = () => {
       let start = new Date(startAt).getTime();
       let end = new Date(endAt).getTime();
       let startRecruiment = new Date(startRecruimentAt).getTime();
-      let startSelling = new Date(startSellingAt).getTime();
       let endRecruiment = new Date(endRecruimentAt).getTime();
-      let dayDiff1 = parseInt((startRecruiment-start)/(24*3600*1000));
-      let dayDiff2 = parseInt((endRecruiment-startRecruiment)/(24*3600*1000));
-      let dayDiff3 = parseInt((end-startSelling)/(24*3600*1000)); 
-      if (
-        (startRecruiment < start) || (dayDiff2 < 1) || (dayDiff3 < 1)
-      ) {
+      let dayDiff1 = parseInt(
+        (endRecruiment - startRecruiment) / (24 * 3600 * 1000)
+      );
+      let dayDiff2 = parseInt((start - endRecruiment) / (24 * 3600 * 1000));
+      let dayDiff3 = parseInt((end - start) / (24 * 3600 * 1000));
+      if (dayDiff1 < 1 || dayDiff2 < 1 || dayDiff3 < 1) {
         msg.startAt = "Trình tự các mốc thời gian không đúng";
       }
     }
@@ -299,7 +353,7 @@ const NewCampaign = () => {
       let minCapacity = document.getElementById("min" + product.id).value;
 
       if (maxCapacity !== "" && minCapacity !== "") {
-        if (parseInt(maxCapacity) < parseInt(minCapacity)) {
+        if (parseInt(maxCapacity) <= parseInt(minCapacity)) {
           msg.capacity = "Số lượng tối đa phải lớn hơn số tối thiểu";
         }
       } else {
@@ -320,9 +374,9 @@ const NewCampaign = () => {
   const showCreateConfirm = () => {
     confirm({
       title: "Bạn có muốn tạo chiến dịch này?",
-      icon: <CheckOutlined />,
+      icon: <CheckCircleTwoTone />,
       content:
-        "Chiến dịch được tạo sẽ ở trạng thái đang chờ và các nông trại có thể gửi yêu cầu tham gia vào.",
+        "Chiến dịch được tạo sẽ ở trạng thái sắp mở bán và các nông trại có thể gửi yêu cầu tham gia vào.",
       okText: "Đồng Ý",
       okType: "dashed",
       cancelText: "Hủy",
@@ -341,7 +395,7 @@ const NewCampaign = () => {
             productSalesCampaigns.push({
               productSystemId: product.id,
               minCapacity: minCapacity,
-              capacity: maxCapacity,
+              maxCapacity: maxCapacity,
             });
           });
           setLoading(true);
@@ -387,12 +441,14 @@ const NewCampaign = () => {
                 message: "Đã có lỗi xảy ra!",
                 style: { fontSize: 16 },
               });
+              setReload(!reload);
             } else {
               notification.error({
                 duration: 2,
                 message: err.response.data.error.message,
                 style: { fontSize: 16 },
               });
+              setReload(!reload);
             }
           });
           if (result === "Create Successfully") {
@@ -515,9 +571,9 @@ const NewCampaign = () => {
                         <DatePicker
                           disabledDate={disabledDate}
                           format="DD-MM-YYYY"
-                          onChange={handleStartAtChange}
+                          onChange={handleStartRecruimentAtChange}
                           style={{ width: 200 }}
-                          placeholder="Ngày khởi tạo"
+                          placeholder="Bắt đầu duyệt đơn"
                         />
                       </div>
 
@@ -525,9 +581,9 @@ const NewCampaign = () => {
                         <DatePicker
                           disabledDate={disabledDate}
                           format="DD-MM-YYYY"
-                          onChange={handleStartRecruimentAtChange}
+                          onChange={handleEndRecruimentAtChange}
                           style={{ width: 200 }}
-                          placeholder="Bắt đầu duyệt đơn"
+                          placeholder="Kết thúc duyệt đơn"
                         />
                       </div>
                     </div>
@@ -537,9 +593,9 @@ const NewCampaign = () => {
                         <DatePicker
                           disabledDate={disabledDate}
                           format="DD-MM-YYYY"
-                          onChange={handleEndRecruimentAtChange}
+                          onChange={handleStartAtChange}
                           style={{ width: 200 }}
-                          placeholder="Kết thúc duyệt đơn"
+                          placeholder="Ngày mở bán"
                         />
                       </div>
 
@@ -566,46 +622,25 @@ const NewCampaign = () => {
                   endRecruimentAt !== "" ? (
                     <Timeline>
                       <Timeline.Item color="grey">
-                        Bắt Đầu Chiến Dịch: {formatDate(startAt)}
+                        Ngày khởi tạo: {formatDate(new Date())}
                       </Timeline.Item>
                       <Timeline.Item>
-                        Mở duyệt đơn: {formatDate(startRecruimentAt)}
+                        Bắt đầu duyệt đơn: {formatDate(startRecruimentAt)}
                       </Timeline.Item>
                       <Timeline.Item>
                         Kết thúc duyệt đơn: {formatDate(endRecruimentAt)}
                       </Timeline.Item>
                       <Timeline.Item color="green">
-                        Bắt đầu mở bán: {formatDate(startSellingAt)}
+                        Bắt đầu mở bán: {formatDate(startAt)}
                       </Timeline.Item>
                       <Timeline.Item color="red">
                         Kết thúc chiến dịch: {formatDate(endAt)}
                       </Timeline.Item>
+                      <Timeline.Item>
+                        Giao hàng dự kiến: {formatDate(expectedDeliveryTime)}
+                      </Timeline.Item>
                     </Timeline>
                   ) : null}
-
-                  <div className="newCampaignFormInput">
-                    <span className="newCampaignLabel">
-                      Khu Vực Giao Hàng:{" "}
-                    </span>
-                    <Select
-                      mode="tags"
-                      placeholder="Chọn khu vực giao hàng"
-                      style={{ width: 500 }}
-                      onChange={handleDeliveyZoneChange}
-                    >
-                      {zone.map((zone) => {
-                        return (
-                          <Option key={zone.id} value={zone.id}>
-                            {zone.name}
-                          </Option>
-                        );
-                      })}
-                    </Select>
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.deliveryZone}
-                    </span>
-                  </div>
-                  <br />
 
                   <div className="newCampaignFormInput">
                     <span className="newCampaignLabel">
@@ -616,7 +651,7 @@ const NewCampaign = () => {
                       style={{ width: 500 }}
                       onChange={handleFarmZoneChange}
                     >
-                      {zone.map((zone) => {
+                      {zone2.map((zone) => {
                         return (
                           <Option key={zone.id} value={zone.id}>
                             {zone.name}
@@ -631,9 +666,33 @@ const NewCampaign = () => {
                   <br />
 
                   <div className="newCampaignFormInput">
+                    <span className="newCampaignLabel">
+                      Khu Vực Giao Hàng:{" "}
+                    </span>
+                    <Select
+                      mode="tags"
+                      placeholder="Chọn khu vực giao hàng"
+                      style={{ width: 500 }}
+                      onChange={handleDeliveyZoneChange}
+                    >
+                      {zone1.map((zone) => {
+                        return (
+                          <Option key={zone.id} value={zone.id}>
+                            {zone.name}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    <span className="newCampaignLabelErr">
+                      {validateMsg.deliveryZone}
+                    </span>
+                  </div>
+                  <br />
+
+                  <div className="newCampaignFormInput">
                     <span className="newCampaignLabel">Mô tả: </span>
                     <TextArea
-                      style={{ width: 500 }}
+                      style={{ width: 500, height: 120 }}
                       onChange={(e) => setDescription(e.target.value)}
                     />
                     <span className="newCampaignLabelErr">

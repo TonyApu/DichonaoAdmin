@@ -4,11 +4,8 @@ import Topbar from "./components/topbar/Topbar";
 import "./app.css";
 import Home from "./pages/home/Home";
 import { Route, Routes } from "react-router-dom";
-import UserList from "./pages/userList/UserList";
 import User from "./pages/user/user";
-import NewUser from "./pages/newUser/NewUser";
 import ProductList from "./pages/productList/ProductList";
-import Product from "./pages/product/Product";
 import NewProduct from "./pages/newProduct/NewProduct";
 import RequestList from "./pages/requestList/RequestList";
 import CampaignList from "./pages/campaignList/CampaignList";
@@ -88,14 +85,6 @@ function App() {
             element={
               <PrivateRoute>
                 <User />
-              </PrivateRoute>
-            }
-          ></Route>
-          <Route
-            path="/newUser"
-            element={
-              <PrivateRoute>
-                <NewUser />
               </PrivateRoute>
             }
           ></Route>

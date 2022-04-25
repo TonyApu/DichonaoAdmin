@@ -1,16 +1,17 @@
-import { SearchOutlined } from "@ant-design/icons";
-import { Button, Input, Table } from "antd";
+import { Button, Input, notification, Result, Table } from "antd";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import userApi from "../../apis/userApi";
-import "./campaignRevenue.css";   
+import "./campaignRevenue.css";
 
 const CampaignRevenue = () => {
   const [page, setPage] = useState(1);
   const [data, setData] = useState([]);
   const [totalRecord, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(10);
+  const [loadErr, setloadErr] = useState(false);
+  const [reload, setReload] = useState(true);
 
   const columns = [
     {
@@ -23,60 +24,7 @@ const CampaignRevenue = () => {
       title: "Tên Chiến Dịch",
       dataIndex: "name",
       key: "name",
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => {
-        return (
-          <div style={{ width: 150 }}>
-            <Input
-              //  style={{width: 100}}
-              autoFocus
-              placeholder="Nhập tên "
-              value={selectedKeys[0]}
-              onChange={(e) => {
-                setSelectedKeys(e.target.value ? [e.target.value] : []);
-                confirm({ closeDropdown: false });
-              }}
-              onPressEnter={() => {
-                confirm();
-              }}
-              onBlur={() => {
-                confirm();
-              }}
-            ></Input>
-            <Button
-              type="primary"
-              onClick={() => {
-                confirm();
-              }}
-            >
-              Tìm
-            </Button>
-            <Button
-              type="danger"
-              onClick={() => {
-                clearFilters();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        );
-      },
-      filterIcon: () => {
-        return <SearchOutlined />;
-      },
-      onFilter: (value, record) => {
-        let total = 0;
-        if (record.name.toLowerCase().includes(value.toLowerCase())) {
-          total++;
-        }
-        setTotalRecords(total);
-        return record.name.toLowerCase().includes(value.toLowerCase());
-      },
+
       render: (text) => <div className="name">{text}</div>,
     },
     {
@@ -117,44 +65,93 @@ const CampaignRevenue = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await userApi.getStatistical();
-      if (response) {
-        let listCampaign = [];
-        let index = (page - 1) * pageSize + 1;
-        response.map((campaign) => {
-          listCampaign.push({ index: index++, ...campaign });
+      await userApi
+        .getStatistical()
+        .then((response) => {
+          let listCampaign = [];
+          let index = (page - 1) * pageSize + 1;
+          console.log(response)
+          response.map((campaign) => {
+            listCampaign.push({ index: index++, ...campaign });
+          });
+          setTotalRecords(response.length);
+          setData(listCampaign);
+          setLoading(false);
+        })
+        .catch((err) => {
+          if (err.message === "Network Error") {
+            notification.error({
+              duration: 2,
+              message: "Mất kết nối mạng!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.message === "timeout") {
+            notification.error({
+              duration: 2,
+              message: "Server mất thời gian quá lâu để phản hồi!",
+              style: { fontSize: 16 },
+            });
+          } else if (err.response.status === 400) {
+            notification.error({
+              duration: 2,
+              message: "Đã có lỗi xảy ra!",
+              style: { fontSize: 16 },
+            });
+          } else {
+            notification.error({
+              duration: 2,
+              message: "Có lỗi xảy ra trong quá trình xử lý!",
+              style: { fontSize: 16 },
+            });
+          }
+          setloadErr(true);
         });
-        setTotalRecords(response.length);
-        setData(listCampaign);
-        setLoading(false);
-      }
     };
     fetchData();
   }, []);
 
   return (
     <div className="campaignRevenue">
-      <div className="wrapper">
-        <div className="productListTitleContainer">
-          <h1 className="productListTitle">Doanh Thu Các Chiến Dịch</h1>
+      {loadErr ? (
+        <Result
+          status="error"
+          title="Đã có lỗi xảy ra!"
+          subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."
+          extra={[
+            <Button
+              type="primary"
+              key="console"
+              onClick={() => {
+                setReload(!reload);
+              }}
+            >
+              Tải lại
+            </Button>,
+          ]}
+        ></Result>
+      ) : (
+        <div className="wrapper">
+          <div className="productListTitleContainer">
+            <h1 className="productListTitle">Doanh Thu Các Chiến Dịch</h1>
+          </div>
+          <Table
+            loading={loading}
+            columns={columns}
+            dataSource={data}
+            pagination={{
+              position: ["bottomCenter"],
+              current: page,
+              pageSize: pageSize,
+              total: totalRecord,
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
+            }}
+            style={{ minHeight: 400 }}
+          />
         </div>
-        <Table
-          loading={loading}
-          columns={columns}
-          dataSource={data}
-          pagination={{
-            position: ["bottomCenter"],
-            current: page,
-            pageSize: pageSize,
-            total: totalRecord,
-            onChange: (page, pageSize) => {
-              setPage(page);
-              setPageSize(pageSize);
-            },
-          }}
-          style={{ minHeight: 400 }}
-        />
-      </div>
+      )}
     </div>
   );
 };

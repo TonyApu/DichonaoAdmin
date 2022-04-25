@@ -9,7 +9,7 @@ export default function ProductList() {
   const [productsSystem, setProductsSystem] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRecord, setTotalRecords] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(10);
   const [searchValue, setSearchValue] = useState("");
   const [loadErr, setloadErr] = useState(false);
   const [flag, setFlag] = useState(true);
@@ -165,7 +165,7 @@ export default function ProductList() {
             </Link>
           </div>
           <Search
-            placeholder="Tìm chiến dịch"
+            placeholder="Tìm sản phẩm"
             onSearch={onSearch}
             style={{ width: 200 }}
           />

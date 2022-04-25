@@ -1,9 +1,18 @@
 import "./newManager.css";
-import { Input, Select, Modal, message, DatePicker, Button, notification } from "antd";
+import {
+  Input,
+  Select,
+  Modal,
+  message,
+  DatePicker,
+  Button,
+  notification,
+} from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import validator from "validator";
 import {
+  CheckCircleTwoTone,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
   EyeTwoTone,
@@ -15,7 +24,7 @@ export default function NewManager() {
   const { Option } = Select;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("")
+  const [name, setName] = useState("");
   const [confirmPassWord, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
@@ -26,14 +35,6 @@ export default function NewManager() {
   const navigate = useNavigate();
   const { confirm } = Modal;
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-  };
-
-  const handleConfirmChange = (e) => {
-    setConfirmPassword(e.target.value);
-  };
-
   const handleDateChange = (date, dateString) => {
     setDob(dateString);
   };
@@ -41,7 +42,6 @@ export default function NewManager() {
   const handleGenderChange = (value) => {
     setGender(value);
   };
-
 
   const validateAll = () => {
     const msg = {};
@@ -53,7 +53,7 @@ export default function NewManager() {
       msg.email = "Email không hợp lệ";
     }
     if (validator.isEmpty(dob)) {
-      msg.dob = "Vui lòng nhập ngày sinh";
+      msg.dob = "Vui lòng nhập mục này";
     }
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(password)) {
       msg.password =
@@ -69,26 +69,15 @@ export default function NewManager() {
     ) {
       msg.phone = "Số điện thoại không hợp lệ";
     }
-    if (
-      !/^[a-zA-Z0-9_@./#&+-ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễếệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ ]{5,}$/.test(
-        address
-      )
-    ) {
-      msg.address = "Địa Chỉ không hợp lệ";
+    if (validator.isEmpty(address)) {
+      msg.address = "Vui lòng nhập mục này";
     }
-    if (
-      !/^[a-zA-Z0-9_@./#&+-ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễếệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ ]{5,}$/.test(
-        name
-      )
-    ) {
-      msg.name = "Tên không hợp lệ";
+    if (validator.isEmpty(name)) {
+      msg.name = "Vui lòng nhập mục này";
     }
     if (validator.isEmpty(gender)) {
-      msg.gender = "Vui lòng chọn giới tính";
+      msg.gender = "Vui lòng chọn mục này";
     }
-    // if (validator.isEmpty(wareHousesZones)) {
-    //   msg.wareHouseZones = "Vui lòng chọn khu vực quản lý";
-    // }
 
     setValidateMsg(msg);
     if (Object.keys(msg).length > 0) return false;
@@ -105,9 +94,9 @@ export default function NewManager() {
   const showRegisterConfirm = () => {
     confirm({
       title: "Bạn có muốn tạo tài khoản này?",
-      icon: <ExclamationCircleOutlined />,
+      icon: <CheckCircleTwoTone />,
       content: "Tài khoản này sẽ hoạt động với vai trò quản lý một kho nào đó!",
-      okText: "Đồng Ý",
+      okText: "Tiếp tục",
       okType: "dashed",
       cancelText: "Hủy",
       async onOk() {
@@ -135,14 +124,14 @@ export default function NewManager() {
               notification.error({
                 duration: 2,
                 message: err.response.data.error.message,
-                style: { fontSize: 16 }
+                style: { fontSize: 16 },
               });
             });
           if (result === "Create successfully!") {
             notification.success({
               duration: 2,
               content: "Tạo thành công!",
-              style: { fontSize: 16 }
+              style: { fontSize: 16 },
             });
           }
         };
@@ -167,7 +156,7 @@ export default function NewManager() {
                   style={{ width: 500 }}
                   onChange={(e) => setUsername(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.username}
                 </span>
                 <br />
@@ -183,7 +172,7 @@ export default function NewManager() {
                   }
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.password}
                 </span>
                 <br />
@@ -199,7 +188,7 @@ export default function NewManager() {
                   }
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.confirmPassWord}
                 </span>
                 <br />
@@ -212,7 +201,7 @@ export default function NewManager() {
                   style={{ width: 500 }}
                   onChange={(e) => setName(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.name}
                 </span>
                 <br />
@@ -225,7 +214,7 @@ export default function NewManager() {
                   style={{ width: 500 }}
                   onChange={(e) => setPhone(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.phone}
                 </span>
                 <br />
@@ -238,7 +227,7 @@ export default function NewManager() {
                   <Option value="nữ">Nữ</Option>
                   <Option value="khác">Khác</Option>
                 </Select>
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.gender}
                 </span>
                 <br />
@@ -249,7 +238,7 @@ export default function NewManager() {
                   onChange={handleDateChange}
                   style={{ width: 500 }}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.dob}
                 </span>
                 <br />
@@ -261,7 +250,7 @@ export default function NewManager() {
                   style={{ width: 500 }}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.email}
                 </span>
                 <br />
@@ -273,7 +262,7 @@ export default function NewManager() {
                   style={{ width: 500 }}
                   onChange={(e) => setAddress(e.target.value)}
                 />
-                <span className="newManagerLabel" style={{ color: "red" }}>
+                <span className="newManagerLabelErr">
                   {validateMsg.address}
                 </span>
                 <br />

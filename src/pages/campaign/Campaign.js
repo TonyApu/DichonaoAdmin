@@ -50,10 +50,11 @@ export default function Campaign() {
             style: { fontSize: 16 },
           });
         }
+        setloadErr(true);
       });
     };
     fetchCampaign();
-  }, []);
+  }, [flag]);
 
   useEffect(() => {
     const fetchFarmsInCampaign = async () => {

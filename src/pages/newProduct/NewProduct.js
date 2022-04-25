@@ -98,7 +98,7 @@ export default function NewProduct() {
       icon: <CheckOutlined />,
       content:
         "Sản phẩm sau khi tạo có thể được các chủ nông trại thêm vào mùa vụ của mình",
-      okText: "Tạo",
+      okText: "Tiếp tục",
       okType: "dashed",
       cancelText: "Hủy",
       onOk() {
@@ -127,18 +127,13 @@ export default function NewProduct() {
                 style: { fontSize: 16 },
               });
               setloadErr(true);
-            } else if (err.response.status === 400) {
-              notification.error({
-                duration: 2,
-                message: "Đã có lỗi xảy ra!",
-                style: { fontSize: 16 },
-              });
             } else {
               notification.error({
                 duration: 2,
                 message: err.response.data.error.message,
                 style: { fontSize: 16 },
               });
+              setFlag(!flag);
             }
           });
           if (result === "Create successfully!") {
@@ -175,13 +170,13 @@ export default function NewProduct() {
       msg.maxPrice = "Giá tối đa phải lớn hơn.";
     }
     if (productCategoryId === 0) {
-      msg.productCategoryId = "Vui lòng chọn loại sản phẩm";
+      msg.productCategoryId = "Vui lòng chọn mục này";
     }
     if (unit === "") {
-      msg.unit = "Vui lòng chọn đơn vị";
+      msg.unit = "Vui lòng chọn mục này";
     }
     if (province === "") {
-      msg.province = "Vui lòng chọn xuất sứ";
+      msg.province = "Vui lòng chọn mục này";
     }
     setValidateMsg(msg);
     if (Object.keys(msg).length > 0) return false;
@@ -271,7 +266,7 @@ export default function NewProduct() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{ color: "red", width: 200 }}
+                          style={{ color: "red", width: 200, fontSize: 14 }}
                         >
                           {validateMsg.minPrice}
                         </span>
@@ -298,7 +293,7 @@ export default function NewProduct() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          
+                          style={{fontSize: 14, color: "red"}}
                         >
                           {validateMsg.maxPrice}
                         </span>
@@ -328,7 +323,7 @@ export default function NewProduct() {
                     </Select>
                     <span
                       className="productDetailLabel"
-                      
+                      style={{fontSize: 14, color: "red"}}
                     >
                       {validateMsg.unit}
                     </span>

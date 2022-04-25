@@ -44,7 +44,7 @@ const Login = () => {
       <div className="d-flex justify-content-center">
         {loading ? (
           <>
-            <Spin indicator={antIcon} /> <br /> <br />{" "}
+            <Spin style={{display: "flex", justifyContent: "center"}} indicator={antIcon} /> <br /> <br />{" "}
           </>
         ) : null}
       </div>

@@ -31,60 +31,6 @@ export default function RequestList() {
       title: "Tên Chiến Dịch",
       dataIndex: "name",
       key: "name",
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => {
-        return (
-          <div style={{ width: 150 }}>
-            <Input
-              //  style={{width: 100}}
-              autoFocus
-              placeholder="Nhập tên "
-              value={selectedKeys[0]}
-              onChange={(e) => {
-                setSelectedKeys(e.target.value ? [e.target.value] : []);
-                confirm({ closeDropdown: false });
-              }}
-              onPressEnter={() => {
-                confirm();
-              }}
-              onBlur={() => {
-                confirm();
-              }}
-            ></Input>
-            <Button
-              type="primary"
-              onClick={() => {
-                confirm();
-              }}
-            >
-              Tìm
-            </Button>
-            <Button
-              type="danger"
-              onClick={() => {
-                clearFilters();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        );
-      },
-      filterIcon: () => {
-        return <SearchOutlined />;
-      },
-      onFilter: (value, record) => {
-        let total = 0;
-        if (record.name.toLowerCase().includes(value.toLowerCase())) {
-          total++;
-        }
-        setTotalRecords(total);
-        return record.name.toLowerCase().includes(value.toLowerCase());
-      },
       render: (text) => <div className="campaignName">{text}</div>,
     },
 
@@ -154,7 +100,7 @@ export default function RequestList() {
         });
     };
     fetchRequests();
-  }, [page]);
+  }, [page, flag]);
 
   return (
     <div className="requestList">

@@ -25,7 +25,6 @@ export default function User() {
   const param = useParams();
   const [reload, setReload] = useState(true);
   const [loadErr, setloadErr] = useState(false);
-  const navigate = useNavigate();
 
   const { confirm } = Modal;
 
@@ -95,6 +94,7 @@ export default function User() {
       okType: "danger",
       cancelText: "Hủy",
       onOk() {
+        setLoading(true);
         const deleteUser = async () => {
           const result = await userApi.updateAccount(id).catch((err) => {
             if (err.message === "Network Error") {

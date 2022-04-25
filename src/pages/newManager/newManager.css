@@ -53,3 +53,8 @@
   cursor: pointer;
   height: 40px;
 }
+
+.newManagerLabelErr{
+  font-size: 14px;
+  color: red;
+}
