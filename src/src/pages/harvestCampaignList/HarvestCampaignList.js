@@ -204,6 +204,7 @@ const HarvestCampaignList = () => {
 
   const handleOk = () => {
     setLoadingTable(true);
+    setIsModalVisible(false);
     const rejectHarvest = async () => {
       const params = {
         id: deleteId,
@@ -216,26 +217,29 @@ const HarvestCampaignList = () => {
             message: "Mất kết nối mạng!",
             style: { fontSize: 16 },
           });
+          setloadErr(true);
         } else if (err.message === "timeout") {
           notification.error({
             duration: 2,
             message: "Server mất thời gian quá lâu để phản hồi!",
             style: { fontSize: 16 },
           });
+          setloadErr(true);
         } else if (err.response.status === 400) {
           notification.error({
             duration: 2,
             message: "Đã có lỗi xảy ra!",
             style: { fontSize: 16 },
           });
+          setFlag(!flag)
         } else {
           notification.error({
             duration: 2,
             message: "Có lỗi xảy ra trong quá trình xử lý!",
             style: { fontSize: 16 },
           });
+          setFlag(!flag)
         }
-        setloadErr(true);
       });
       if (result === "Update successfully!") {
         notification.success({
@@ -354,6 +358,7 @@ const HarvestCampaignList = () => {
             cancelText="Hủy"
           >
             <span>Hãy cho chủ nông trại biết lý do nhé:</span>
+            <br/>
             <Radio.Group
               style={{ marginTop: 20 }}
               onChange={(e) => onReasonChange(e)}
@@ -363,11 +368,8 @@ const HarvestCampaignList = () => {
                 <Radio value={"Hình ảnh không hợp lệ"}>
                   Hình ảnh không hợp lệ
                 </Radio>
-                <Radio value={"Tên sản phẩm không hợp lệ"}>
-                  Tên sản phẩm không hợp lệ
-                </Radio>
-                <Radio value={"Giá sản phẩm không nằm trong khoảng qui định"}>
-                  Giá sản phẩm không nằm trong khoảng qui định
+                <Radio value={"Thông tin không đúng"}>
+                  Thông tin không đúng
                 </Radio>
                 <Radio value={"Khác"}>
                   Khác...

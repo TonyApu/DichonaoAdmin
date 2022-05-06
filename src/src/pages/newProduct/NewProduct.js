@@ -1,21 +1,10 @@
 import "./newProduct.css";
-import {
-  Form,
-  Input,
-  Select,
-  Button,
-  Space,
-  InputNumber,
-  Modal,
-  message,
-  notification,
-  Result,
-  Spin,
-} from "antd";
+import { Input, Select, Button, Modal, notification, Result, Spin } from "antd";
 import { useEffect, useState } from "react";
 import productSystemApi from "../../apis/productSystemApi";
 import productCategoriesApi from "../../apis/productCategoriesApi";
 import { useNavigate } from "react-router-dom";
+import validator from "validator";
 import { CheckOutlined } from "@ant-design/icons";
 
 export default function NewProduct() {
@@ -24,11 +13,16 @@ export default function NewProduct() {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(0);
   const [unit, setUnit] = useState("");
-  const [province, setProvince] = useState("");
-  const [productCategoryId, setProductCategoryId] = useState(0);
-  const [validateMsg, setValidateMsg] = useState("");
+  const [origin, setOrigin] = useState("");
+  const [productCategoryId, setProductCategoryId] = useState("");
   const [loading, setLoading] = useState("");
   const [loadErr, setloadErr] = useState(false);
+  const [productNameErr, setProductNameErr] = useState("");
+  const [minPriceErr, setMinPriceErr] = useState("");
+  const [maxPriceErr, setMaxPriceErr] = useState("");
+  const [unitErr, setUnitErr] = useState("");
+  const [originErr, setOriginErr] = useState("");
+  const [productCategoryErr, setProductCategoryErr] = useState("");
   const [flag, setFlag] = useState(true);
   const { Option } = Select;
   const { confirm } = Modal;
@@ -80,17 +74,71 @@ export default function NewProduct() {
     fetchCategories();
   }, [flag]);
 
-  const onChangeUnit = (e) => {
-    setUnit(e);
-  };
+  // const onChangeUnit = (e) => {
+  //   setUnit(e);
+  // };
 
-  const onChangProvince = (e) => {
-    setProvince(e);
-  };
+  // const onChangProvince = (e) => {
+  //   setProvince(e);
+  // };
 
-  const onChangeCatagory = (e) => {
-    setProductCategoryId(e);
-  };
+  // const onChangeCatagory = (e) => {
+  //   setProductCategoryId(e);
+  // };
+
+  const checkInvalidProductName = () => {
+    if (validator.isEmpty(productName.trim())) {
+      setProductNameErr("Tên sản phẩm không hợp lệ");
+    } else {
+      setProductNameErr("");
+    }
+  }
+
+  const checkInvalidOrigin = () => {
+    if (origin === "") {
+      setOriginErr("Vui lòng chọn mục này")
+    } else {
+      setOriginErr("");
+    }
+  }
+
+  const checkInvalidMinPrice = () => {
+    if (!/^[1-9][0-9]{2,8}$/.test(parseInt(minPrice))) {
+      setMinPriceErr("Giá tối thiểu không hợp lệ.")
+    } else if (/^[1-9][0-9]{2,8}$/.test(parseInt(maxPrice)) && parseInt(maxPrice) <= parseInt(minPrice)) {
+      setMinPriceErr("Giá tối thiểu phải nhỏ hơn tối đa.")
+    } else {
+      setMinPriceErr("");
+      setMaxPriceErr("");
+    }
+  }
+
+  const checkInvalidMaxPrice = () => {
+    if (!/^[1-9][0-9]{2,8}$/.test(parseInt(maxPrice))) {
+      setMaxPriceErr("Giá tối đa không hợp lệ")
+    }else if (/^[1-9][0-9]{2,8}$/.test(parseInt(minPrice)) && parseInt(maxPrice) <= parseInt(minPrice)) {
+      setMaxPriceErr("Giá tối đa phải lớn hơn tối thiểu")
+    } else {
+      setMaxPriceErr("");
+      setMinPriceErr("");
+    }
+  }
+
+  const checkInvalidUnit = () => {
+    if (unit === "") {
+      setUnitErr("Vui lòng chọn mục này")
+    } else {
+      setUnitErr("");
+    }
+  }
+
+  const checkInvalidCategory = () => {
+    if (productCategoryId === "") {
+      setProductCategoryErr("Vui lòng chọn mục này")
+    } else {
+      setProductCategoryErr("");
+    }
+  }
 
   const showCreateConfirm = () => {
     confirm({
@@ -109,7 +157,7 @@ export default function NewProduct() {
             maxPrice: maxPrice,
             unit: unit,
             productCategoryId: productCategoryId,
-            province: province,
+            province: origin,
           };
           setLoading(true);
           const result = await productSystemApi.addNew(params).catch((err) => {
@@ -153,33 +201,55 @@ export default function NewProduct() {
   };
 
   const validateAll = () => {
-    let msg = {};
-    if (
-      !/^[^-\s][a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\W|_]+$/.test(
-        productName
-      )
-    ) {
-      msg.productName = "Tên sản phẩm không hợp lệ.";
+    let err = 0;
+    if (validator.isEmpty(productName.trim())) {
+      setProductNameErr("Tên sản phẩm không hợp lệ");
+      err++;
+    } else {
+      setProductNameErr("");
     }
+
     if (!/^[1-9][0-9]{2,8}$/.test(parseInt(minPrice))) {
-      msg.minPrice = "Giá tối thiểu không hợp lệ.";
+      setMinPriceErr("Giá tối thiểu không hợp lệ.")
+    } else if (/^[1-9][0-9]{2,8}$/.test(parseInt(maxPrice)) && parseInt(maxPrice) <= parseInt(minPrice)) {
+      setMinPriceErr("Giá tối thiểu phải nhỏ hơn tối đa.")
+    } else {
+      setMinPriceErr("");
+      setMaxPriceErr("");
     }
+
     if (!/^[1-9][0-9]{2,8}$/.test(parseInt(maxPrice))) {
-      msg.maxPrice = "Giá tối đa không hợp lệ.";
-    } else if (maxPrice < minPrice) {
-      msg.maxPrice = "Giá tối đa phải lớn hơn.";
+      setMaxPriceErr("Giá tối đa không hợp lệ");
+      err++;
+    }else if (/^[1-9][0-9]{2,8}$/.test(parseInt(minPrice)) && parseInt(maxPrice) <= parseInt(minPrice)) {
+      setMaxPriceErr("Giá tối đa phải lớn hơn tối thiểu");
+      err++;
+    } else {
+      setMaxPriceErr("");
+      setMinPriceErr("")
     }
-    if (productCategoryId === 0) {
-      msg.productCategoryId = "Vui lòng chọn mục này";
+
+    if (productCategoryId === "") {
+      setProductCategoryErr("Vui lòng chọn mục này")
+      err++;
+    } else {
+      setProductCategoryErr("");
     }
+
     if (unit === "") {
-      msg.unit = "Vui lòng chọn mục này";
+      setUnitErr("Vui lòng chọn mục này")
+      err++;
+    } else {
+      setUnitErr("");
     }
-    if (province === "") {
-      msg.province = "Vui lòng chọn mục này";
+
+    if (origin === "") {
+      setOriginErr("Vui lòng chọn mục này")
+      err++
+    } else {
+      setOriginErr("");
     }
-    setValidateMsg(msg);
-    if (Object.keys(msg).length > 0) return false;
+    if (err > 0) return false;
     return true;
   };
 
@@ -216,7 +286,7 @@ export default function NewProduct() {
               <h1 className="productDetailTitle">Tạo Sản Phẩm Mới</h1>
               {loading ? (
                 <>
-                  <Spin  
+                  <Spin
                     style={{ display: "flex", justifyContent: "center" }}
                     size="large"
                   />{" "}
@@ -231,26 +301,25 @@ export default function NewProduct() {
                       onChange={(e) => {
                         setProductName(e.target.value);
                       }}
+                      onBlur={checkInvalidProductName}
                     />
-                    <span
-                      className="newProductLabelErr"
-                      
-                    >
-                      {validateMsg.productName}
+                    <span className="newProductLabelErr">
+                      {productNameErr}
                     </span>
                   </div>
                   <br />
 
                   <div className="productDetailFormInput">
                     <span className="productDetailLabel">Xuất Sứ: </span>
-                    <Select style={{ width: 500 }} onChange={onChangProvince}>
+                    <Select
+                      style={{ width: 500 }}
+                      onChange={(e) => setOrigin(e)}
+                      onBlur={checkInvalidOrigin}
+                    >
                       <Option value="Đồng Nai">Đồng Nai</Option>
                     </Select>
-                    <span
-                      className="newProductLabelErr"
-                      
-                    >
-                      {validateMsg.province}
+                    <span className="newProductLabelErr">
+                      {originErr}
                     </span>
                   </div>
                   <br />
@@ -262,13 +331,14 @@ export default function NewProduct() {
                         <Input
                           style={{ width: 200 }}
                           onChange={(e) => setMinPrice(e.target.value)}
+                          onBlur={checkInvalidMinPrice}
                         />
                         <br />
                         <span
                           className="productDetailLabel"
                           style={{ color: "red", width: 200, fontSize: 14 }}
                         >
-                          {validateMsg.minPrice}
+                          {minPriceErr}
                         </span>
                       </div>
                       <div style={{ display: "inline-block" }}>
@@ -289,13 +359,14 @@ export default function NewProduct() {
                         <Input
                           style={{ width: 200 }}
                           onChange={(e) => setMaxPrice(e.target.value)}
+                          onBlur={checkInvalidMaxPrice}
                         />
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{fontSize: 14, color: "red"}}
+                          style={{ fontSize: 14, color: "red" }}
                         >
-                          {validateMsg.maxPrice}
+                          {maxPriceErr}
                         </span>
                       </div>
 
@@ -307,7 +378,7 @@ export default function NewProduct() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{ color: "red", marginLeft: 20 }}
+                          style={{ color: "red", marginLeft: 20, fontSize: 14 }}
                         >
                           {null}
                         </span>
@@ -318,32 +389,33 @@ export default function NewProduct() {
 
                   <div className="productDetailFormInput">
                     <span className="productDetailLabel">Đơn vị: </span>
-                    <Select style={{ width: 500 }} onChange={onChangeUnit}>
+                    <Select style={{ width: 500 }} onChange={(e) => setUnit(e)} onBlur={checkInvalidUnit}>
                       <Option value="Kg">Kg</Option>
                     </Select>
                     <span
                       className="productDetailLabel"
-                      style={{fontSize: 14, color: "red"}}
+                      style={{ fontSize: 14, color: "red" }}
                     >
-                      {validateMsg.unit}
+                      {unitErr}
                     </span>
                   </div>
                   <br />
 
                   <div className="productDetailFormInput">
                     <span className="productDetailLabel">Loại</span>
-                    <Select style={{ width: 500 }} onChange={onChangeCatagory}>
+                    <Select
+                      style={{ width: 500 }}
+                      onChange={(e) => setProductCategoryId(e)}
+                      onBlur={checkInvalidCategory}
+                    >
                       {categories.map((category) => {
                         return (
                           <Option value={category.id}>{category.name}</Option>
                         );
                       })}
                     </Select>
-                    <span
-                      className="newProductLabelErr"
-                      
-                    >
-                      {validateMsg.productCategoryId}
+                    <span className="newProductLabelErr">
+                      {productCategoryErr}
                     </span>
                   </div>
                   <br />

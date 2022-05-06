@@ -227,7 +227,7 @@ export default function ProductDetail() {
               } else if (err.response.status === 400) {
                 notification.error({
                   duration: 2,
-                  message: "Đã có lỗi xảy ra!",
+                  message: err.response.data.error.message,
                   style: { fontSize: 16 },
                 });
               } else {
@@ -339,7 +339,7 @@ export default function ProductDetail() {
                     />
                     <span
                       className="productDetailLabel"
-                      style={{ color: "red" }}
+                      style={{ color: "red", fontSize: 14 }}
                     >
                       {validateMsg.productName}
                     </span>
@@ -363,7 +363,7 @@ export default function ProductDetail() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{ color: "red", width: 200 }}
+                          style={{ color: "red", width: 200, fontSize: 14  }}
                         >
                           {validateMsg.minPrice}
                         </span>
@@ -391,7 +391,7 @@ export default function ProductDetail() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{ color: "red" }}
+                          style={{ color: "red", fontSize: 14  }}
                         >
                           {validateMsg.maxPrice}
                         </span>
@@ -405,7 +405,7 @@ export default function ProductDetail() {
                         <br />
                         <span
                           className="productDetailLabel"
-                          style={{ color: "red", marginLeft: 20 }}
+                          style={{ color: "red", marginLeft: 20, fontSize: 14  }}
                         >
                           {null}
                         </span>

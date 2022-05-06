@@ -1,6 +1,5 @@
 import React from "react";
 import "./topbar.css";
-import Bau_Avatar from "../../assets/bau_avatar.jpg";
 import { CheckOutlined, LogoutOutlined } from "@ant-design/icons";
 import { logout } from "../../stateManager/user/userSlice";
 import { useDispatch } from "react-redux";
@@ -58,7 +57,7 @@ export default function Topbar() {
           >
             Đăng Xuất
           </div>
-          <img src={Bau_Avatar} alt="" className="topAvatar" />
+          {/* <img src={Bau_Avatar} alt="" className="topAvatar" /> */}
         </div>
       </div>
     </div>

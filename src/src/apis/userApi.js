@@ -22,7 +22,7 @@ const userApi = {
     return axiosClient.get(url);
   },
   registerWareHouseManager(params) {
-    const url = "/users";
+    const url = "/users/admin";
     return axiosClient.post(url, params);
   },
   getDataDashboard() {

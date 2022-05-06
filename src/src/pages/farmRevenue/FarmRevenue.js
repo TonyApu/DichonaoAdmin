@@ -144,6 +144,7 @@ const FarmRevenue = () => {
     <div className="farmRevenue">
       {loadErr ? (
         <Result
+        
           status="error"
           title="Đã có lỗi xảy ra!"
           subTitle="Rất tiếc đã có lỗi xảy ra trong quá trình tải dữ liệu, vui lòng kiểm tra lại kết nối mạng và thử lại."

@@ -41,8 +41,16 @@ const NewCampaign = () => {
   const { Option } = Select;
   const [zone1, setZone1] = useState([]);
   const [zone2, setZone2] = useState([]);
-  const [validateMsg, setValidateMsg] = useState("");
   const [loadErr, setloadErr] = useState(false);
+  const [campaignNameErr, setCampaignNameErr] = useState("");
+  const [imageErr, setImageErr] = useState("");
+  const [timelineErr, setTimelineErr] = useState("");
+  const [farmZoneErr, setFarmZoneErr] = useState("");
+  const [deliveryZoneErr, setDeliveryZoneErr] = useState("");
+  const [typeErr, setTypeErr] = useState("");
+  const [descriptionErr, setDescriptionErr] = useState("");
+  const [productListErr, setProductListErr] = useState("");
+  const [capacityErr, setCapacityErr] = useState("");
   const [reload, setReload] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -205,15 +213,13 @@ const NewCampaign = () => {
         const url = await getDownloadURL(storageRef);
         firebaseUrl = url;
       }
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
 
     return firebaseUrl;
   };
 
   const disabledDate = (current) => {
-    return current && current < moment().endOf("day");
+    return current < moment().startOf("day");
   };
 
   const handleStartAtChange = (value) => {
@@ -283,6 +289,7 @@ const NewCampaign = () => {
   };
 
   const handleTypeChange = (e) => {
+    console.log(e);
     setType(e);
   };
 
@@ -298,28 +305,42 @@ const NewCampaign = () => {
     setProductList(listProduct);
   };
 
-  const validateAll = () => {
-    const msg = {};
+  const checkInvalidCampaignName = () => {
     if (validator.isEmpty(campaignName.trim())) {
-      msg.campaignName = "Tên chiến dịch không hợp lệ";
+      setCampaignNameErr("Tên chiến dịch không hợp lệ");
+    } else {
+      setCampaignNameErr("");
     }
-    if (validator.isEmpty(description.trim())) {
-      msg.description = "Mô tả không hợp lệ";
-    }
-    if (farmZone === "") {
-      msg.farmZone = "Vui lòng chọn mục này";
-    }
+  };
+
+  const checkInvalidImage = () => {
     if (fileList.length === 0) {
-      msg.fileList = "Vui lòng chọn chọn mục này";
+      setImageErr("Vui lòng chọn mục này");
+    } else {
+      setImageErr("");
     }
+  };
+
+  const checkInvalidType = () => {
+    if (type === "") {
+      setTypeErr("Vui lòng chọn mục này");
+    } else {
+      setTypeErr("");
+    }
+  };
+
+  const checkTimelineErr = () => {
     if (
       startAt === "" ||
       endAt === "" ||
       startRecruimentAt === "" ||
       endRecruimentAt === ""
     ) {
-      msg.startAt = "Vui lòng chọn đủ các mốc thời gian của chiến dịch";
+      setTimelineErr("Vui lòng chọn đủ các mốc thời gian của chiến dịch");
+    } else {
+      setTimelineErr("");
     }
+
     if (
       startAt !== "" &&
       endAt !== "" &&
@@ -336,38 +357,183 @@ const NewCampaign = () => {
       let dayDiff2 = parseInt((start - endRecruiment) / (24 * 3600 * 1000));
       let dayDiff3 = parseInt((end - start) / (24 * 3600 * 1000));
       if (dayDiff1 < 1 || dayDiff2 < 1 || dayDiff3 < 1) {
-        msg.startAt = "Trình tự các mốc thời gian không đúng";
+        setTimelineErr("Trình tự các mốc thời gian không đúng");
+      } else {
+        setTimelineErr("");
       }
     }
-    if (type === "") {
-      msg.type = "Vui lòng chọn mục này";
+  };
+
+  const checkInvalidFarmZone = () => {
+    if (farmZone === "") {
+      setFarmZoneErr("Vui lòng chọn mục này");
+    } else {
+      setFarmZoneErr("");
     }
+  };
+
+  const checkInvalidDeliveryZone = () => {
     if (deliveryZone.length === 0) {
-      msg.deliveryZone = "Vui lòng chọn mục này";
+      setDeliveryZoneErr("Vui lòng chọn mục này");
+    } else {
+      setDeliveryZoneErr("");
     }
+  };
+
+  const checkInvalidDescription = () => {
+    if (validator.isEmpty(description.trim())) {
+      setDescriptionErr("Vui lòng chọn mục này");
+    } else {
+      setDescriptionErr("");
+    }
+  };
+
+  const checkInvalidProductList = () => {
     if (productList.length === 0) {
-      msg.productList = "Vui lòng chọn mục này";
+      setProductListErr("Vui lòng chọn mục này");
+    } else {
+      setProductListErr("");
     }
+  };
+
+  const checkInvalidCapacity = () => {
     productList.map((product) => {
       let maxCapacity = document.getElementById("max" + product.id).value;
       let minCapacity = document.getElementById("min" + product.id).value;
 
       if (maxCapacity !== "" && minCapacity !== "") {
         if (parseInt(maxCapacity) <= parseInt(minCapacity)) {
-          msg.capacity = "Số lượng tối đa phải lớn hơn số tối thiểu";
+          setCapacityErr("Số tối đa phải lớn hơn tối thiểu");
+        } else {
+          setCapacityErr("");
         }
       } else {
         if (!/^[1-9][0-9]{1,3}$/.test(parseInt(maxCapacity))) {
-          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+          setCapacityErr("Số lượng sản phẩm không hợp lệ");
+        } else {
+          setCapacityErr("");
         }
         if (!/^[1-9][0-9]{1,3}$/.test(parseInt(minCapacity))) {
-          msg.capacity = "Số lượng sản phẩm không hợp lệ";
+          setCapacityErr("Số lượng sản phẩm không hợp lệ");
+        }
+        setCapacityErr("");
+      }
+    });
+  };
+
+  const validateAll = () => {
+    let error = 0;
+    if (validator.isEmpty(campaignName.trim())) {
+      setCampaignNameErr("Tên chiến dịch không hợp lệ");
+      error++;
+    } else {
+      setCampaignNameErr("");
+    }
+
+    if (validator.isEmpty(description.trim())) {
+      setDescriptionErr("Vui lòng chọn mục này");
+      error++;
+    } else {
+      setDescriptionErr("");
+    }
+
+    if (farmZone === "") {
+      setFarmZoneErr("Vui lòng chọn mục này");
+      error++;
+    } else {
+      setFarmZoneErr("");
+    }
+
+    if (fileList.length === 0) {
+      setImageErr("Vui lòng chọn mục này");
+      error++;
+    } else {
+      setImageErr("");
+    }
+
+    if (
+      startAt === "" ||
+      endAt === "" ||
+      startRecruimentAt === "" ||
+      endRecruimentAt === ""
+    ) {
+      setTimelineErr("Vui lòng chọn đủ các mốc thời gian của chiến dịch");
+      error++;
+    } else {
+      setTimelineErr("");
+    }
+
+    if (
+      startAt !== "" &&
+      endAt !== "" &&
+      startRecruimentAt !== "" &&
+      endRecruimentAt !== ""
+    ) {
+      let start = new Date(startAt).getTime();
+      let end = new Date(endAt).getTime();
+      let startRecruiment = new Date(startRecruimentAt).getTime();
+      let endRecruiment = new Date(endRecruimentAt).getTime();
+      let dayDiff1 = parseInt(
+        (endRecruiment - startRecruiment) / (24 * 3600 * 1000)
+      );
+      let dayDiff2 = parseInt((start - endRecruiment) / (24 * 3600 * 1000));
+      let dayDiff3 = parseInt((end - start) / (24 * 3600 * 1000));
+      if (dayDiff1 < 1 || dayDiff2 < 1 || dayDiff3 < 1) {
+        setTimelineErr("Trình tự các mốc thời gian không đúng");
+        error++;
+      } else {
+        setTimelineErr("");
+      }
+    }
+
+    if (type === "") {
+      setTypeErr("Vui lòng chọn mục này");
+      error++;
+    } else {
+      setTypeErr("");
+    }
+
+    if (deliveryZone.length === 0) {
+      setDeliveryZoneErr("Vui lòng chọn mục này");
+    } else {
+      setDeliveryZoneErr("");
+    }
+
+    if (productList.length === 0) {
+      setProductListErr("Vui lòng chọn mục này");
+      error++;
+    } else {
+      setProductListErr("");
+    }
+
+    productList.map((product) => {
+      let maxCapacity = document.getElementById("max" + product.id).value;
+      let minCapacity = document.getElementById("min" + product.id).value;
+
+      if (maxCapacity !== "" && minCapacity !== "") {
+        if (parseInt(maxCapacity) <= parseInt(minCapacity)) {
+          setCapacityErr("Số tối đa phải lớn hơn tối thiểu");
+          error++;
+        } else {
+          setCapacityErr("");
+        }
+      } else {
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(maxCapacity))) {
+          setCapacityErr("Số lượng sản phẩm không hợp lệ");
+          error++;
+        } else {
+          setCapacityErr("");
+        }
+        if (!/^[1-9][0-9]{1,3}$/.test(parseInt(minCapacity))) {
+          setCapacityErr("Số lượng sản phẩm không hợp lệ");
+          error++;
+        } else {
+          setCapacityErr("");
         }
       }
     });
 
-    setValidateMsg(msg);
-    if (Object.keys(msg).length > 0) return false;
+    if (error > 0) return false;
     return true;
   };
 
@@ -517,9 +683,10 @@ const NewCampaign = () => {
                     <Input
                       style={{ width: 500 }}
                       onChange={(e) => setCampaignName(e.target.value)}
+                      onBlur={checkInvalidCampaignName}
                     />
                     <span className="newCampaignLabelErr">
-                      {validateMsg.campaignName}
+                      {campaignNameErr}
                     </span>
                   </div>
                   <br />
@@ -537,12 +704,11 @@ const NewCampaign = () => {
                       beforeUpload={(file) => {
                         return false;
                       }}
+                      onBlur={checkInvalidImage}
                     >
                       {fileList.length < 5 && "+ Upload"}
                     </Upload>
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.fileList}
-                    </span>
+                    <span className="newCampaignLabelErr">{imageErr}</span>
                   </div>
                   <br />
 
@@ -551,13 +717,12 @@ const NewCampaign = () => {
                     <Select
                       style={{ width: 500 }}
                       onChange={(e) => handleTypeChange(e)}
+                      onBlur={checkInvalidType}
                     >
                       <Option value="Hàng tuần">Hàng Tuần</Option>
                       <Option value="Sự kiện">Sự Kiện</Option>
                     </Select>
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.type}
-                    </span>
+                    <span className="newCampaignLabelErr">{typeErr}</span>
                   </div>
                   <br />
 
@@ -574,6 +739,7 @@ const NewCampaign = () => {
                           onChange={handleStartRecruimentAtChange}
                           style={{ width: 200 }}
                           placeholder="Bắt đầu duyệt đơn"
+                          onBlur={checkTimelineErr}
                         />
                       </div>
 
@@ -584,6 +750,7 @@ const NewCampaign = () => {
                           onChange={handleEndRecruimentAtChange}
                           style={{ width: 200 }}
                           placeholder="Kết thúc duyệt đơn"
+                          onBlur={checkTimelineErr}
                         />
                       </div>
                     </div>
@@ -596,6 +763,7 @@ const NewCampaign = () => {
                           onChange={handleStartAtChange}
                           style={{ width: 200 }}
                           placeholder="Ngày mở bán"
+                          onBlur={checkTimelineErr}
                         />
                       </div>
 
@@ -606,13 +774,12 @@ const NewCampaign = () => {
                           onChange={handleEndAtChange}
                           style={{ width: 200 }}
                           placeholder="Ngày kết thúc"
+                          onBlur={checkTimelineErr}
                         />
                       </div>
                     </div>
 
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.startAt}
-                    </span>
+                    <span className="newCampaignLabelErr">{timelineErr}</span>
                   </div>
                   <br />
 
@@ -650,6 +817,7 @@ const NewCampaign = () => {
                       placeholder="Chọn khu vực nông trại"
                       style={{ width: 500 }}
                       onChange={handleFarmZoneChange}
+                      onBlur={checkInvalidFarmZone}
                     >
                       {zone2.map((zone) => {
                         return (
@@ -659,9 +827,7 @@ const NewCampaign = () => {
                         );
                       })}
                     </Select>
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.farmZone}
-                    </span>
+                    <span className="newCampaignLabelErr">{farmZoneErr}</span>
                   </div>
                   <br />
 
@@ -674,6 +840,7 @@ const NewCampaign = () => {
                       placeholder="Chọn khu vực giao hàng"
                       style={{ width: 500 }}
                       onChange={handleDeliveyZoneChange}
+                      onBlur={checkInvalidDeliveryZone}
                     >
                       {zone1.map((zone) => {
                         return (
@@ -684,7 +851,7 @@ const NewCampaign = () => {
                       })}
                     </Select>
                     <span className="newCampaignLabelErr">
-                      {validateMsg.deliveryZone}
+                      {deliveryZoneErr}
                     </span>
                   </div>
                   <br />
@@ -694,9 +861,10 @@ const NewCampaign = () => {
                     <TextArea
                       style={{ width: 500, height: 120 }}
                       onChange={(e) => setDescription(e.target.value)}
+                      onBlur={checkInvalidDescription}
                     />
                     <span className="newCampaignLabelErr">
-                      {validateMsg.description}
+                      {descriptionErr}
                     </span>
                   </div>
                   <br />
@@ -710,6 +878,7 @@ const NewCampaign = () => {
                       placeholder="Chọn loại sản phẩm"
                       style={{ width: 500 }}
                       onChange={(e) => handleProductChange(e)}
+                      onBlur={checkInvalidProductList}
                     >
                       {productsSystem.map((product) => {
                         return (
@@ -720,7 +889,7 @@ const NewCampaign = () => {
                       })}
                     </Select>
                     <span className="newCampaignLabelErr">
-                      {validateMsg.productList}
+                      {productListErr}
                     </span>
                   </div>
 
@@ -735,11 +904,11 @@ const NewCampaign = () => {
                             <List.Item.Meta
                               title={item.name}
                               description={
-                                item.minPrice +
+                                item.minPrice.toLocaleString() +
                                 " " +
                                 "VNĐ" +
                                 " - " +
-                                item.maxPrice +
+                                item.maxPrice.toLocaleString() +
                                 " " +
                                 "VNĐ"
                               }
@@ -761,9 +930,7 @@ const NewCampaign = () => {
                       />
                     ) : null}
 
-                    <span className="newCampaignLabelErr">
-                      {validateMsg.capacity}
-                    </span>
+                    <span className="newCampaignLabelErr">{capacityErr}</span>
                   </div>
                   <br />
 

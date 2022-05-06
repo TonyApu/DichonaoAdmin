@@ -105,13 +105,13 @@ const DriverList = () => {
       active: status,
       name: searchValue,
     };
-    console.log(params);
     const fetchRequests = async () => {
       setLoading(true);
       setloadErr(false);
       await userApi
         .getAccount(params)
         .then((response) => {
+          console.log(response)
           let listFarmers = [];
           let index = (page - 1) * pageSize + 1;
           setTotalRecords(response.metadata.total);
